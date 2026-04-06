@@ -1,0 +1,676 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.mutuelle:mutuelle-mobile >--------------------
+[INFO] Building mutuelle-mobile 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.2.3:run (default-cli) > test-compile @ mutuelle-mobile >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ mutuelle-mobile ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ mutuelle-mobile ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ mutuelle-mobile ---
+[INFO] skip non existing resourceDirectory D:\MutuelleNehemie\CODE\mutuelle-backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ mutuelle-mobile ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] <<< spring-boot:3.2.3:run (default-cli) < test-compile @ mutuelle-mobile <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.2.3:run (default-cli) @ mutuelle-mobile ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.3)
+
+2026-04-01T11:00:58.094+01:00  INFO 6316 --- [mutuelle-mobile] [           main] com.mutuelle.MutuelleApplication         : Starting MutuelleApplication using Java 22.0.2 with PID 6316 (D:\MutuelleNehemie\CODE\mutuelle-backend\target\classes started by bbatc in D:\MutuelleNehemie\CODE\mutuelle-backend)
+2026-04-01T11:00:58.097+01:00 DEBUG 6316 --- [mutuelle-mobile] [           main] com.mutuelle.MutuelleApplication         : Running with Spring Boot v3.2.3, Spring v6.1.4
+2026-04-01T11:00:58.098+01:00  INFO 6316 --- [mutuelle-mobile] [           main] com.mutuelle.MutuelleApplication         : No active profile set, falling back to 1 default profile: "default"
+2026-04-01T11:00:58.919+01:00  INFO 6316 --- [mutuelle-mobile] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-01T11:00:59.015+01:00  INFO 6316 --- [mutuelle-mobile] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 88 ms. Found 24 JPA repository interfaces.
+2026-04-01T11:00:59.894+01:00  INFO 6316 --- [mutuelle-mobile] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-04-01T11:00:59.911+01:00  INFO 6316 --- [mutuelle-mobile] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-01T11:00:59.911+01:00  INFO 6316 --- [mutuelle-mobile] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-04-01T11:01:00.001+01:00  INFO 6316 --- [mutuelle-mobile] [           main] o.a.c.c.C.[Tomcat].[localhost].[/api]    : Initializing Spring embedded WebApplicationContext
+2026-04-01T11:01:00.004+01:00  INFO 6316 --- [mutuelle-mobile] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1853 ms
+2026-04-01T11:01:00.069+01:00  INFO 6316 --- [mutuelle-mobile] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-04-01T11:01:00.435+01:00  INFO 6316 --- [mutuelle-mobile] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:file:./mutuelleN user=SA
+2026-04-01T11:01:00.435+01:00  INFO 6316 --- [mutuelle-mobile] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-04-01T11:01:00.458+01:00  INFO 6316 --- [mutuelle-mobile] [           main] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:h2:file:./mutuelleN'
+2026-04-01T11:01:00.682+01:00  INFO 6316 --- [mutuelle-mobile] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-04-01T11:01:00.780+01:00  INFO 6316 --- [mutuelle-mobile] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2026-04-01T11:01:00.842+01:00  INFO 6316 --- [mutuelle-mobile] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-04-01T11:01:01.197+01:00  INFO 6316 --- [mutuelle-mobile] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-04-01T11:01:01.288+01:00  WARN 6316 --- [mutuelle-mobile] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-04-01T11:01:02.702+01:00  INFO 6316 --- [mutuelle-mobile] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+Hibernate: 
+    create table "administrator" (
+        "id" bigint generated by default as identity,
+        "active" boolean not null,
+        "admin_role" varchar(255) not null check ("admin_role" in ('SECRETAIRE_GENERALE','PRESIDENT','TRESORIER')),
+        "created_at" timestamp(6),
+        "username" varchar(50) not null,
+        "user_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "borrowing" (
+        "id" bigint generated by default as identity,
+        "approved_amount" numeric(15,2) not null,
+        "created_at" timestamp(6),
+        "due_date" date not null,
+        "interest_amount" numeric(15,2) not null,
+        "net_amount_received" numeric(15,2) not null,
+        "remaining_balance" numeric(15,2) not null,
+        "requested_amount" numeric(15,2) not null,
+        "status" varchar(255) not null check ("status" in ('PENDING','ACTIVE','COMPLETED','DEFAULTED')),
+        "administrator_id" bigint not null,
+        "member_id" bigint not null,
+        "session_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "cashbox" (
+        "id" bigint generated by default as identity,
+        "balance" numeric(15,2) not null,
+        "created_at" timestamp(6),
+        "last_update" timestamp(6),
+        "name" varchar(255) not null check ("name" in ('INSCRIPTION','SOLIDARITY','SAVING','REFUELING','PENALTY')),
+        primary key ("id")
+    )
+Hibernate: 
+    create table "chat_message" (
+        "id" bigint generated by default as identity,
+        "created_at" timestamp(6),
+        "external_message_id" varchar(100),
+        "message" varchar(1000) not null,
+        "is_read" boolean,
+        "receiver_id" bigint not null,
+        "sender_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "contribution" (
+        "id" bigint generated by default as identity,
+        "amount" numeric(15,2) not null,
+        "created_at" timestamp(6),
+        "status" varchar(255) not null,
+        "help_id" bigint not null,
+        "member_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "exercise" (
+        "id" bigint generated by default as identity,
+        "active" boolean not null,
+        "agape_amount" numeric(15,2) not null,
+        "created_at" timestamp(6),
+        "end_date" date not null,
+        "inscription_amount" numeric(15,2) not null,
+        "interest_rate" numeric(5,2),
+        "penalty_amount" numeric(15,2) not null,
+        "solidarity_amount" numeric(15,2) not null,
+        "start_date" date not null,
+        "year" varchar(10) not null,
+        "administrator_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "help" (
+        "id" bigint generated by default as identity,
+        "collected_amount" numeric(15,2),
+        "created_at" timestamp(6),
+        "eligible_verified" boolean,
+        "limit_date" timestamp(6) not null,
+        "status" varchar(255) not null,
+        "target_amount" numeric(15,2) not null,
+        "unit_amount" numeric(15,2) not null,
+        "verified_at" timestamp(6),
+        "administrator_id" bigint not null,
+        "help_type_id" bigint not null,
+        "member_id" bigint not null,
+        "verified_by" bigint,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "help_type" (
+        "id" bigint generated by default as identity,
+        "active" boolean not null,
+        "created_at" timestamp(6),
+        "default_amount" numeric(15,2),
+        "description" varchar(1000),
+        "name" varchar(100) not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "interest_distribution" (
+        "id" bigint generated by default as identity,
+        "created_at" timestamp(6),
+        "distributed_amount" numeric(15,2),
+        "distribution_date" timestamp(6),
+        "remaining_amount" numeric(15,2),
+        "status" varchar(255) not null,
+        "total_interest" numeric(15,2) not null,
+        "administrator_id" bigint not null,
+        "borrowing_id" bigint not null,
+        "session_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "interest_distribution_detail" (
+        "id" bigint generated by default as identity,
+        "amount_received" numeric(15,2) not null,
+        "received_at" timestamp(6),
+        "distribution_id" bigint not null,
+        "member_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "member" (
+        "id" bigint generated by default as identity,
+        "active" boolean not null,
+        "created_at" timestamp(6),
+        "inscription_date" date not null,
+        "registration_number" varchar(20) not null,
+        "updated_at" timestamp(6),
+        "username" varchar(50) not null,
+        "administrator_id" bigint not null,
+        "user_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "member_status_log" (
+        "id" bigint generated by default as identity,
+        "borrowing_debt" numeric(15,2) not null,
+        "calculated_at" timestamp(6),
+        "refueling_debt" numeric(15,2) not null,
+        "solidarity_debt" numeric(15,2) not null,
+        "status" varchar(255) not null check ("status" in ('EN_REGLE','NON_EN_REGLE','INSOLVABLE','INACTIF')),
+        "total_debt" numeric(15,2) not null,
+        "member_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "payments" (
+        "id" bigint generated by default as identity,
+        "amount" numeric(15,2) not null,
+        "created_at" timestamp(6),
+        "payment_date" timestamp(6),
+        "payment_method" varchar(255),
+        "payment_type" varchar(255) not null check ("payment_type" in ('INSCRIPTION','SOLIDARITY','REFUELING','SAVING_DEPOSIT','BORROWING_REFUND','PENALTY')),
+        "phone_number" varchar(20),
+        "reference_id" bigint,
+        "status" varchar(255) not null,
+        "transaction_id" varchar(100),
+        "administrator_id" bigint not null,
+        "cashbox_id" bigint not null,
+        "member_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "penalty" (
+        "id" bigint generated by default as identity,
+        "amount" numeric(15,2) not null,
+        "applied_date" date not null,
+        "created_at" timestamp(6),
+        "distributed_to_savers" boolean,
+        "status" varchar(255) not null,
+        "administrator_id" bigint not null,
+        "borrowing_id" bigint not null,
+        "member_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "refueling" (
+        "id" bigint generated by default as identity,
+        "amount_per_member" numeric(15,2) not null,
+        "created_at" timestamp(6),
+        "distribution_date" date not null,
+        "eligible_member_count" integer not null,
+        "status" varchar(255) not null,
+        "surplus_to_inscription" numeric(15,2) not null,
+        "total_collected" numeric(15,2) not null,
+        "total_outflows" numeric(15,2) not null,
+        "administrator_id" bigint not null,
+        "exercise_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "refueling_distribution" (
+        "id" bigint generated by default as identity,
+        "amount_received" numeric(15,2) not null,
+        "distributed_at" timestamp(6),
+        "is_in_rule" boolean not null,
+        "member_id" bigint not null,
+        "refueling_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "refund" (
+        "id" bigint generated by default as identity,
+        "amount" numeric(15,2) not null,
+        "created_at" timestamp(6),
+        "refund_date" date not null,
+        "remaining_balance" numeric(15,2) not null,
+        "borrowing_id" bigint not null,
+        "exercise_id" bigint not null,
+        "member_id" bigint not null,
+        "session_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "saving" (
+        "id" bigint generated by default as identity,
+        "amount" numeric(15,2) not null,
+        "created_at" timestamp(6),
+        "cumulative_total" numeric(15,2) not null,
+        "type" varchar(255) not null check ("type" in ('INFLOW','OUTFLOW')),
+        "administrator_id" bigint not null,
+        "member_id" bigint not null,
+        "session_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "session" (
+        "id" bigint generated by default as identity,
+        "active" boolean not null,
+        "closed_at" timestamp(6),
+        "created_at" timestamp(6),
+        "date" date not null,
+        "session_number" integer not null,
+        "state" varchar(255) not null check ("state" in ('OPEN','SAVING','CLOSED','ARCHIVED')),
+        "administrator_id" bigint not null,
+        "exercise_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "settings_history" (
+        "id" bigint generated by default as identity,
+        "modified_date" timestamp(6),
+        "new_value" numeric(15,2) not null,
+        "old_value" numeric(15,2),
+        "setting_name" varchar(50) not null,
+        "modified_by" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "solidarity" (
+        "id" bigint generated by default as identity,
+        "amount" numeric(15,2) not null,
+        "created_at" timestamp(6),
+        "notes" varchar(2000),
+        "payment_date" date not null,
+        "payment_method" varchar(255),
+        "administrator_id" bigint not null,
+        "member_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "solidarity_debt" (
+        "id" bigint generated by default as identity,
+        "last_payment_date" date,
+        "remaining_debt" numeric(15,2) not null,
+        "status" varchar(255) not null,
+        "total_due" numeric(15,2) not null,
+        "total_paid" numeric(15,2) not null,
+        "updated_at" timestamp(6),
+        "member_id" bigint not null,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "transaction_log" (
+        "id" bigint generated by default as identity,
+        "amount" numeric(15,2) not null,
+        "category" varchar(50) not null,
+        "created_at" timestamp(6),
+        "description" varchar(2000),
+        "reference_id" bigint,
+        "reference_table" varchar(50),
+        "transaction_date" timestamp(6) not null,
+        "type" varchar(255) not null check ("type" in ('INFLOW','OUTFLOW')),
+        "cashbox_id" bigint not null,
+        "member_id" bigint,
+        primary key ("id")
+    )
+Hibernate: 
+    create table "user" (
+        "id" bigint generated by default as identity,
+        "address" varchar(500),
+        "avatar" varchar(255),
+        "created_at" timestamp(6),
+        "email" varchar(150) not null,
+        "first_name" varchar(100) not null,
+        "name" varchar(100) not null,
+        "password" varchar(255) not null,
+        "tel" varchar(20),
+        "type" varchar(255) not null check ("type" in ('SUPER_ADMIN','ADMIN','MEMBER')),
+        "updated_at" timestamp(6),
+        primary key ("id")
+    )
+Hibernate: 
+    alter table if exists "administrator" 
+       drop constraint if exists UK_esogmqxeek1uwdyhxvubme3qf
+Hibernate: 
+    alter table if exists "administrator" 
+       add constraint UK_esogmqxeek1uwdyhxvubme3qf unique ("username")
+Hibernate: 
+    alter table if exists "administrator" 
+       drop constraint if exists UK_jf8hwde5kvshk44s9pllcqid9
+Hibernate: 
+    alter table if exists "administrator" 
+       add constraint UK_jf8hwde5kvshk44s9pllcqid9 unique ("user_id")
+Hibernate: 
+    alter table if exists "cashbox" 
+       drop constraint if exists UK_3nykdvmebwihestx40letg6vl
+Hibernate: 
+    alter table if exists "cashbox" 
+       add constraint UK_3nykdvmebwihestx40letg6vl unique ("name")
+Hibernate: 
+    alter table if exists "member" 
+       drop constraint if exists UK_lkiol2fp0s1gryf2pipkn9yk0
+Hibernate: 
+    alter table if exists "member" 
+       add constraint UK_lkiol2fp0s1gryf2pipkn9yk0 unique ("registration_number")
+Hibernate: 
+    alter table if exists "member" 
+       drop constraint if exists UK_gc3jmn7c2abyo3wf6syln5t2i
+Hibernate: 
+    alter table if exists "member" 
+       add constraint UK_gc3jmn7c2abyo3wf6syln5t2i unique ("username")
+Hibernate: 
+    alter table if exists "member" 
+       drop constraint if exists UK_a9bw6sk85ykh4bacjpu0ju5f6
+Hibernate: 
+    alter table if exists "member" 
+       add constraint UK_a9bw6sk85ykh4bacjpu0ju5f6 unique ("user_id")
+Hibernate: 
+    alter table if exists "solidarity_debt" 
+       drop constraint if exists UK_211n9bbg1lvqa0e0aq1cckxhd
+Hibernate: 
+    alter table if exists "solidarity_debt" 
+       add constraint UK_211n9bbg1lvqa0e0aq1cckxhd unique ("member_id")
+Hibernate: 
+    alter table if exists "user" 
+       drop constraint if exists UK_ob8kqyqqgmefl0aco34akdtpe
+Hibernate: 
+    alter table if exists "user" 
+       add constraint UK_ob8kqyqqgmefl0aco34akdtpe unique ("email")
+Hibernate: 
+    alter table if exists "administrator" 
+       add constraint "FKcguqv4k8h1biim5edsejmpttp" 
+       foreign key ("user_id") 
+       references "user"
+Hibernate: 
+    alter table if exists "borrowing" 
+       add constraint "FKamigpu5suivdoqlr8s0a7mylq" 
+       foreign key ("administrator_id") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "borrowing" 
+       add constraint "FKkx88ydr9dpoiie4etgy6p7fd8" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "borrowing" 
+       add constraint "FK5qreuqpyixgeht60vanwl5iwe" 
+       foreign key ("session_id") 
+       references "session"
+Hibernate: 
+    alter table if exists "chat_message" 
+       add constraint "FK7b9b5rgjiqqnawcnllj6o1d5p" 
+       foreign key ("receiver_id") 
+       references "user"
+Hibernate: 
+    alter table if exists "chat_message" 
+       add constraint "FKcm9vqcg7pjxq91patqydjsn1f" 
+       foreign key ("sender_id") 
+       references "user"
+Hibernate: 
+    alter table if exists "contribution" 
+       add constraint "FK6jo0iqa8xjcsspr50mt19qkux" 
+       foreign key ("help_id") 
+       references "help"
+Hibernate: 
+    alter table if exists "contribution" 
+       add constraint "FKl8dn2waldm7s82icdofon6qm6" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "exercise" 
+       add constraint "FKo5mq78vhhdt87hw42fxh3b0mt" 
+       foreign key ("administrator_id") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "help" 
+       add constraint "FKn6asbtq88p59g1hqhjf2fqqd8" 
+       foreign key ("administrator_id") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "help" 
+       add constraint "FKk9pwwvw3s6hvi8psurxdv76t0" 
+       foreign key ("help_type_id") 
+       references "help_type"
+Hibernate: 
+    alter table if exists "help" 
+       add constraint "FKmi6rt1wbinbk4fj0iasl3epw6" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "help" 
+       add constraint "FKkbmywbrnxmmdv2e8h6rbom3ng" 
+       foreign key ("verified_by") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "interest_distribution" 
+       add constraint "FKpo8a7sfeq0vnlh47i6hn9tqnw" 
+       foreign key ("administrator_id") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "interest_distribution" 
+       add constraint "FKhbvnfnbypybes130w3h6s1fd6" 
+       foreign key ("borrowing_id") 
+       references "borrowing"
+Hibernate: 
+    alter table if exists "interest_distribution" 
+       add constraint "FKdr2grnkf9r57g2u73udugf0jd" 
+       foreign key ("session_id") 
+       references "session"
+Hibernate: 
+    alter table if exists "interest_distribution_detail" 
+       add constraint "FKegaw86riuyujn7t0is5w6r6x4" 
+       foreign key ("distribution_id") 
+       references "interest_distribution"
+Hibernate: 
+    alter table if exists "interest_distribution_detail" 
+       add constraint "FKsagr8cyejdwriq0boj63njxdj" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "member" 
+       add constraint "FK8jajjaklwyo81dm5w3y30aoyb" 
+       foreign key ("administrator_id") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "member" 
+       add constraint "FKak0vcal1n334vgrgeh7gu3eie" 
+       foreign key ("user_id") 
+       references "user"
+Hibernate: 
+    alter table if exists "member_status_log" 
+       add constraint "FK7bl5myj3giosrl4ex1ll008hb" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "payments" 
+       add constraint "FKtp2seqe7qc6k53nld215m5hsv" 
+       foreign key ("administrator_id") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "payments" 
+       add constraint "FKlpq8sfxf6xnwwniwb3hsxp0jl" 
+       foreign key ("cashbox_id") 
+       references "cashbox"
+Hibernate: 
+    alter table if exists "payments" 
+       add constraint "FKcmrkbhdmmrlxqoutyoxx7n94s" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "penalty" 
+       add constraint "FK9v9d6qrcv7g29vd7f0x15klen" 
+       foreign key ("administrator_id") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "penalty" 
+       add constraint "FK9d830g6ej3u67fd8cfshmkew4" 
+       foreign key ("borrowing_id") 
+       references "borrowing"
+Hibernate: 
+    alter table if exists "penalty" 
+       add constraint "FKps9ft5ylwmb9ap8n1sju2owmt" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "refueling" 
+       add constraint "FKo829sa50efhp9csse23k4dh53" 
+       foreign key ("administrator_id") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "refueling" 
+       add constraint "FKiveif6e50sp717dm82c7ic4fk" 
+       foreign key ("exercise_id") 
+       references "exercise"
+Hibernate: 
+    alter table if exists "refueling_distribution" 
+       add constraint "FKtj8a4idh1g4ac00bomkkontw4" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "refueling_distribution" 
+       add constraint "FK449em537fu78v988arhrpkcuf" 
+       foreign key ("refueling_id") 
+       references "refueling"
+Hibernate: 
+    alter table if exists "refund" 
+       add constraint "FKfg7whiexo27dctdsevgog7fmd" 
+       foreign key ("borrowing_id") 
+       references "borrowing"
+Hibernate: 
+    alter table if exists "refund" 
+       add constraint "FKbga54rb9ofd0unlidia7ixxuj" 
+       foreign key ("exercise_id") 
+       references "exercise"
+Hibernate: 
+    alter table if exists "refund" 
+       add constraint "FKlj84a60qlmo3xwq13kdousru4" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "refund" 
+       add constraint "FKqvstktt8psvnmagog9yfdf1pw" 
+       foreign key ("session_id") 
+       references "session"
+Hibernate: 
+    alter table if exists "saving" 
+       add constraint "FK9u0m07j30msdk8j63990p83af" 
+       foreign key ("administrator_id") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "saving" 
+       add constraint "FKf81dcbd3hu0bjiuru5yowknf2" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "saving" 
+       add constraint "FK5uyw1omrqgrn3c166ykfhkhx6" 
+       foreign key ("session_id") 
+       references "session"
+Hibernate: 
+    alter table if exists "session" 
+       add constraint "FKe00pxvu2vojkj7f8bakhw8u59" 
+       foreign key ("administrator_id") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "session" 
+       add constraint "FKdv4he89iy2hjqbtmnocok4tym" 
+       foreign key ("exercise_id") 
+       references "exercise"
+Hibernate: 
+    alter table if exists "settings_history" 
+       add constraint "FKc8f2ph9qfixa245wilfjvx5a6" 
+       foreign key ("modified_by") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "solidarity" 
+       add constraint "FK63ynqq1byehc0pocjbk3fmqwi" 
+       foreign key ("administrator_id") 
+       references "administrator"
+Hibernate: 
+    alter table if exists "solidarity" 
+       add constraint "FK4jbcfm3i34hwbkqv4neenj874" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "solidarity_debt" 
+       add constraint "FKbo61fd2w3dolo6o9vehsor2n4" 
+       foreign key ("member_id") 
+       references "member"
+Hibernate: 
+    alter table if exists "transaction_log" 
+       add constraint "FKdrqkxefy665eu3epe8uppx4aa" 
+       foreign key ("cashbox_id") 
+       references "cashbox"
+Hibernate: 
+    alter table if exists "transaction_log" 
+       add constraint "FKnlnkekw9sj9cp9kq9gwsd59e0" 
+       foreign key ("member_id") 
+       references "member"
+2026-04-01T11:01:02.861+01:00  INFO 6316 --- [mutuelle-mobile] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T11:01:03.189+01:00 DEBUG 6316 --- [mutuelle-mobile] [           main] c.m.config.JwtAuthenticationFilter       : Filter 'jwtAuthenticationFilter' configured for use
+2026-04-01T11:01:03.991+01:00  WARN 6316 --- [mutuelle-mobile] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-04-01T11:01:04.308+01:00  INFO 6316 --- [mutuelle-mobile] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@6ecf239d, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@5f9cb96f, org.springframework.security.web.context.SecurityContextHolderFilter@5f745970, org.springframework.security.web.header.HeaderWriterFilter@22599048, org.springframework.web.filter.CorsFilter@45295bed, org.springframework.security.web.authentication.logout.LogoutFilter@2493f9a8, com.mutuelle.config.JwtAuthenticationFilter@194a653d, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@35f59dfe, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@6b71fded, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@6fa98e98, org.springframework.security.web.session.SessionManagementFilter@1a524c6b, org.springframework.security.web.access.ExceptionTranslationFilter@7e00a43e, org.springframework.security.web.access.intercept.AuthorizationFilter@75c8855e]
+2026-04-01T11:01:04.670+01:00  WARN 6316 --- [mutuelle-mobile] [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2026-04-01T11:01:04.675+01:00  INFO 6316 --- [mutuelle-mobile] [           main] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-01T11:01:04.675+01:00  INFO 6316 --- [mutuelle-mobile] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-04-01T11:01:04.681+01:00  INFO 6316 --- [mutuelle-mobile] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-04-01T11:01:04.693+01:00  INFO 6316 --- [mutuelle-mobile] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-04-01T11:01:04.708+01:00 ERROR 6316 --- [mutuelle-mobile] [           main] o.s.b.d.LoggingFailureAnalysisReporter   : 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8080 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8080 or configure this application to listen on another port.
+
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  9.786 s
+[INFO] Finished at: 2026-04-01T11:01:04+01:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:3.2.3:run (default-cli) on project mutuelle-mobile: Process terminated with exit code: 1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: mutuelle-mobile
+  datasource:
+    url: jdbc:mysql://localhost:3306/mutuellen?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        globally_quoted_identifiers: true
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+      
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+jwt:
+  secret: ${JWT_SECRET:mySecretKeyForMutuelleMobileApplication2024VeryLongAndSecureWithExtraLengthToMeet512BitRequirement}
+  expiration: 86400000
+
+chat:
+  api:
+    url: ${CHAT_API_URL:https://api.stream-chat.com}
+    key: ${CHAT_API_KEY:your-api-key}
+
+logging:
+  level:
+    com.mutuelle: DEBUG
+    org.springframework.security: DEBUG
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
