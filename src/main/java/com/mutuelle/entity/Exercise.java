@@ -1,5 +1,6 @@
 package com.mutuelle.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -19,7 +20,7 @@ public class Exercise {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "`year`", nullable = false, length = 10)
+    @Column(name = "year", nullable = false, length = 10)
     private String year;
 
     @Column(name = "start_date", nullable = false)
@@ -29,25 +30,26 @@ public class Exercise {
     private LocalDate endDate;
 
     @Column(name = "interest_rate", precision = 5, scale = 2)
-    private BigDecimal interestRate = new BigDecimal("3.00");
+    private BigDecimal interestRate;
 
-    @Column(name = "inscription_amount", precision = 15, scale = 2, nullable = false)
-    private BigDecimal inscriptionAmount = new BigDecimal("50000.00");
+    @Column(name = "solidarity_amount", precision = 15, scale = 2)
+    private BigDecimal solidarityAmount;
 
-    @Column(name = "solidarity_amount", precision = 15, scale = 2, nullable = false)
-    private BigDecimal solidarityAmount = new BigDecimal("150000.00");
+    @Column(name = "agape_amount", precision = 15, scale = 2)
+    private BigDecimal agapeAmount;
 
-    @Column(name = "agape_amount", precision = 15, scale = 2, nullable = false)
-    private BigDecimal agapeAmount = new BigDecimal("45000.00");
+    @Column(name = "penalty_amount", precision = 15, scale = 2)
+    private BigDecimal penaltyAmount;
 
-    @Column(name = "penalty_amount", precision = 15, scale = 2, nullable = false)
-    private BigDecimal penaltyAmount = new BigDecimal("15000.00");
+    @Column(name = "inscription_amount", precision = 15, scale = 2)
+    private BigDecimal inscriptionAmount;
 
     @Column(nullable = false)
     private boolean active = false;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "administrator_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "administrator_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "user"})
     private Administrator administrator;
 
     @CreationTimestamp

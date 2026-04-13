@@ -1,6 +1,6 @@
 -- =====================================================
 -- SCRIPT DE PEUPLEMENT DE LA BASE DE DONNÉES DE TEST
--- MUTUELLE MOBILE
+-- MUTUELLE WEB
 -- =====================================================
 
 USE mutuelle_db;
@@ -95,7 +95,11 @@ INSERT INTO member (user_id, administrator_id, registration_number, username, ac
 (11, 2, 'MUT-2025-007', 'georges_bikoro', TRUE, DATE_SUB(NOW(), INTERVAL 1 MONTH)),
 (12, 2, 'MUT-2025-008', 'helene_essama', TRUE, DATE_SUB(NOW(), INTERVAL 20 DAY)),
 (13, 2, 'MUT-2025-009', 'isabelle_mbeze', TRUE, DATE_SUB(NOW(), INTERVAL 10 DAY)),
-(14, 2, 'MUT-2025-010', 'jacques_owona', TRUE, DATE_SUB(NOW(), INTERVAL 2 DAY));
+(14, 2, 'MUT-2025-010', 'jacques_owona', TRUE, DATE_SUB(NOW(), INTERVAL 2 DAY)),
+-- Administrateurs en tant que membres
+(2, 2, 'MUT-EXEC-001', 'jean_nkolo', TRUE, DATE_SUB(NOW(), INTERVAL 1 YEAR)),
+(3, 2, 'MUT-EXEC-002', 'marie_essonba', TRUE, DATE_SUB(NOW(), INTERVAL 1 YEAR)),
+(4, 2, 'MUT-EXEC-003', 'paul_mvondo', TRUE, DATE_SUB(NOW(), INTERVAL 1 YEAR));
 
 -- =====================================================
 -- 4. EXERCICES

@@ -10,4 +10,5 @@ import java.util.List;
 public interface TransactionLogRepository extends JpaRepository<TransactionLog, Long> {
     List<TransactionLog> findByMemberId(Long memberId);
     List<TransactionLog> findByCashboxId(Long cashboxId);
+    List<TransactionLog> findTop10ByOrderByTransactionDateDesc();
 }

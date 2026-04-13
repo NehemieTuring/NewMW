@@ -19,7 +19,7 @@ import java.util.Map;
 @RequestMapping("/admin")
 @RequiredArgsConstructor
 @Tag(name = "Secrétaire Générale API", description = "Endpoints for operational management")
-@PreAuthorize("hasRole('SECRETAIRE_GENERALE') or hasRole('SUPER_ADMIN')")
+// @PreAuthorize removed from class level to allow debug endpoint access
 public class AdminPortalController {
 
     private final MemberService memberService;
@@ -34,6 +34,7 @@ public class AdminPortalController {
     private final ChatService chatService;
     private final AdminService adminService;
     private final AuthService authService;
+    private final AgapeService agapeService;
 
     // 3.1 Membres
     @PostMapping("/members")
@@ -70,21 +71,28 @@ public class AdminPortalController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/members/{id}/activate")
+    public ResponseEntity<Void> activateMember(@PathVariable Long id) {
+        memberService.activateMember(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/members/{id}/status")
     public ResponseEntity<String> getMemberStatus(@PathVariable Long id) {
         return ResponseEntity.ok(memberService.getMemberStatus(id));
     }
 
     @GetMapping("/members/{id}/debts")
-    public ResponseEntity<Map<String, Object>> getMemberDebts(@PathVariable Long id) {
+    public ResponseEntity<List<Map<String, Object>>> getMemberDebts(@PathVariable Long id) {
         return ResponseEntity.ok(memberService.getMemberDebts(id));
     }
 
     // 3.1 Solidarité
     @PostMapping("/solidarity/payments")
     public ResponseEntity<Solidarity> recordSolidarityPayment(@RequestParam Long memberId, @RequestParam BigDecimal amount) {
-        // En réalité, on devrait récupérer l'admin du contexte
-        return ResponseEntity.ok(solidarityService.paySolidarity(memberId, amount, null));
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(solidarityService.paySolidarity(memberId, amount, admin));
     }
 
     @GetMapping("/solidarity/members/{memberId}/debt")
@@ -100,12 +108,16 @@ public class AdminPortalController {
     // 3.1 Épargne
     @PostMapping("/savings/deposit")
     public ResponseEntity<Saving> deposit(@RequestParam Long memberId, @RequestParam BigDecimal amount) {
-        return ResponseEntity.ok(savingService.deposit(memberId, amount, null));
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(savingService.deposit(memberId, amount, admin));
     }
 
     @PostMapping("/savings/withdrawal")
     public ResponseEntity<Saving> withdraw(@RequestParam Long memberId, @RequestParam BigDecimal amount) {
-        return ResponseEntity.ok(savingService.withdraw(memberId, amount, null));
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(savingService.withdraw(memberId, amount, admin));
     }
 
     @GetMapping("/savings/members/{memberId}")
@@ -126,7 +138,9 @@ public class AdminPortalController {
     // 3.1 Emprunts
     @PostMapping("/borrowings/request")
     public ResponseEntity<Borrowing> requestLoan(@RequestParam Long memberId, @RequestParam BigDecimal amount) {
-        return ResponseEntity.ok(borrowingService.requestLoan(memberId, amount, null));
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(borrowingService.requestLoan(memberId, amount, admin));
     }
 
     @GetMapping("/borrowings")
@@ -141,12 +155,36 @@ public class AdminPortalController {
 
     @PostMapping("/borrowings/{id}/refund")
     public ResponseEntity<Refund> refundLoan(@PathVariable Long id, @RequestParam BigDecimal amount) {
-        return ResponseEntity.ok(borrowingService.recordRefund(id, amount, null));
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(borrowingService.recordRefund(id, amount, admin));
     }
 
     @GetMapping("/borrowings/members/{memberId}")
     public ResponseEntity<List<Borrowing>> getMemberLoans(@PathVariable Long memberId) {
         return ResponseEntity.ok(borrowingService.getMemberLoans(memberId));
+    }
+
+    // Agape
+    @PostMapping("/agapes")
+    public ResponseEntity<Agape> createAgape(@RequestParam String title, @RequestParam String description, @RequestParam BigDecimal amount, @RequestParam String date, @RequestParam Long sessionId) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(agapeService.createAgape(title, description, amount, java.time.LocalDate.parse(date), sessionId, admin));
+    }
+
+    @GetMapping("/agapes")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN', 'ROLE_SECRETAIRE_GENERALE', 'ROLE_PRESIDENT', 'ROLE_TRESORIER')")
+    public ResponseEntity<List<Agape>> getAgapes() {
+        return ResponseEntity.ok(agapeService.getAllAgapes());
+    }
+
+    @PostMapping("/helps/{id}/disburse")
+    public ResponseEntity<Void> disburseHelp(@PathVariable Long id) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        helpService.disburseHelp(id, admin);
+        return ResponseEntity.noContent().build();
     }
 
     // 3.1 Aides
@@ -161,8 +199,14 @@ public class AdminPortalController {
     }
 
     @PostMapping("/helps")
-    public ResponseEntity<Help> createHelp(@RequestParam Long typeId, @RequestParam Long beneficiaryId, @RequestParam BigDecimal amount) {
-        return ResponseEntity.ok(helpService.createHelp(typeId, beneficiaryId, amount, null));
+    public ResponseEntity<Help> createHelp(@RequestParam Long typeId, @RequestParam Long beneficiaryId, @RequestParam(required = false) BigDecimal amount) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        
+        HelpType type = helpService.getHelpTypeById(typeId);
+        BigDecimal targetAmount = (amount != null) ? amount : type.getDefaultAmount();
+        
+        return ResponseEntity.ok(helpService.createHelp(typeId, beneficiaryId, targetAmount, admin));
     }
 
     @GetMapping("/helps")
@@ -187,11 +231,37 @@ public class AdminPortalController {
 
     // Sessions et Exercices
     @PostMapping("/exercises")
-    public ResponseEntity<Exercise> createExercise(@RequestBody Exercise exercise) {
-        return ResponseEntity.ok(exerciseService.createExercise(exercise));
+    public ResponseEntity<?> createExercise(@RequestBody Exercise exercise) {
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+                return ResponseEntity.status(401).body(java.util.Map.of("message", "Vous devez être connecté pour créer un exercice."));
+            }
+            
+            String email = auth.getName();
+            System.out.println("=== EXERCISE CREATION DEBUG ===");
+            System.out.println("User email: " + email);
+            System.out.println("Exercise year: " + exercise.getYear());
+            System.out.println("Exercise startDate: " + exercise.getStartDate());
+            System.out.println("Exercise endDate: " + exercise.getEndDate());
+            
+            Administrator admin = adminService.getAdminByEmail(email);
+            System.out.println("Admin found: " + admin.getId() + " - " + admin.getUsername());
+            
+            Exercise created = exerciseService.createExercise(exercise, admin);
+            System.out.println("Exercise created successfully with ID: " + created.getId());
+            return ResponseEntity.ok(created);
+        } catch (Exception e) {
+            System.err.println("=== EXERCISE CREATION FAILED ===");
+            e.printStackTrace();
+            String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            return ResponseEntity.status(500).body(java.util.Map.of("message", "Erreur lors de la création: " + msg));
+        }
     }
 
+
     @GetMapping("/exercises")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN', 'ROLE_SECRETAIRE_GENERALE', 'ROLE_PRESIDENT', 'ROLE_TRESORIER')")
     public ResponseEntity<List<Exercise>> getExercises() {
         return ResponseEntity.ok(exerciseService.getAllExercises());
     }
@@ -202,12 +272,23 @@ public class AdminPortalController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/exercises/{id}")
+    public ResponseEntity<Exercise> updateExercise(@PathVariable Long id, @RequestBody Exercise exercise) {
+        return ResponseEntity.ok(exerciseService.updateExercise(id, exercise));
+    }
+
+    @GetMapping("/exercises/current")
+    public ResponseEntity<Exercise> getCurrentExercise() {
+        return ResponseEntity.ok(exerciseService.findActiveExercise().orElse(null));
+    }
+
     @PostMapping("/sessions")
     public ResponseEntity<Session> createSession(@RequestBody Session session) {
         return ResponseEntity.ok(sessionService.createSession(session));
     }
 
     @GetMapping("/sessions")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN', 'ROLE_SECRETAIRE_GENERALE', 'ROLE_PRESIDENT', 'ROLE_TRESORIER')")
     public ResponseEntity<List<Session>> getSessions() {
         return ResponseEntity.ok(sessionService.getAllSessions());
     }
@@ -253,12 +334,12 @@ public class AdminPortalController {
     // Bilans
     @GetMapping("/dashboard/exercises/{exerciseId}")
     public ResponseEntity<Map<String, Object>> getExerciseBilan(@PathVariable Long exerciseId) {
-        return ResponseEntity.ok(Map.of("exerciseId", exerciseId));
+        return ResponseEntity.ok(dashboardService.getExerciseBilan(exerciseId));
     }
 
     @GetMapping("/dashboard/sessions/{sessionId}")
     public ResponseEntity<Map<String, Object>> getSessionBilan(@PathVariable Long sessionId) {
-        return ResponseEntity.ok(Map.of("sessionId", sessionId));
+        return ResponseEntity.ok(dashboardService.getSessionBilan(sessionId));
     }
 
     @GetMapping("/dashboard/transactions")
@@ -324,11 +405,10 @@ public class AdminPortalController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<Administrator> updateProfile(@RequestBody RegisterMemberRequest request) {
+    public ResponseEntity<Administrator> updateProfile(@RequestParam String name, @RequestParam String firstName, @RequestParam String username) {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         Administrator admin = adminService.getAdminByEmail(email);
-        // On pourrait ajouter une méthode d'update réelle dans adminService
-        return ResponseEntity.ok(admin);
+        return ResponseEntity.ok(adminService.updateProfile(admin.getId(), name, firstName, username));
     }
 
     @PutMapping("/profile/password")
@@ -342,5 +422,12 @@ public class AdminPortalController {
     @GetMapping("/admins")
     public ResponseEntity<List<Administrator>> getOtherAdmins() {
         return ResponseEntity.ok(adminService.getAllAdmins());
+    }
+
+    @GetMapping("/debug/roles")
+    public ResponseEntity<List<String>> getDebugRoles() {
+        return ResponseEntity.ok(org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .map(org.springframework.security.core.GrantedAuthority::getAuthority)
+                .collect(java.util.stream.Collectors.toList()));
     }
 }

@@ -10,4 +10,7 @@ import java.util.Optional;
 public interface ExerciseRepository extends JpaRepository<Exercise, Long> {
     Optional<Exercise> findByActiveTrue();
     Optional<Exercise> findByYear(String year);
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("UPDATE Exercise e SET e.active = false")
+    void deactivateAll();
 }

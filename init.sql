@@ -1,5 +1,5 @@
 -- =====================================================
--- BASE DE DONNÉES MUTUELLE MOBILE
+-- BASE DE DONNÉES MUTUELLE WEB
 -- =====================================================
 
 CREATE DATABASE IF NOT EXISTS mutuelle_db;

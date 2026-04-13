@@ -1,19 +1,20 @@
 package com.mutuelle.service;
 
 import com.mutuelle.dto.request.RegisterMemberRequest;
-import com.mutuelle.entity.Administrator;
-import com.mutuelle.entity.Member;
-import com.mutuelle.entity.User;
+import com.mutuelle.entity.*;
+import com.mutuelle.enums.CashboxName;
+import com.mutuelle.enums.PaymentType;
+import com.mutuelle.enums.TransactionType;
 import com.mutuelle.enums.RoleType;
 import com.mutuelle.exception.BusinessException;
-import com.mutuelle.repository.AdministratorRepository;
-import com.mutuelle.repository.MemberRepository;
-import com.mutuelle.repository.UserRepository;
+import com.mutuelle.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,14 +25,20 @@ public class MemberService {
     private final UserRepository userRepository;
     private final AdministratorRepository adminRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SolidarityDebtRepository solidarityDebtRepository;
+    private final BorrowingRepository borrowingRepository;
+    private final CashboxRepository cashboxRepository;
+    private final TransactionLogRepository transactionLogRepository;
+    private final PaymentRepository paymentRepository;
+    private final ExerciseService exerciseService;
 
     @Transactional
     public Member register(RegisterMemberRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new BusinessException("Email already in use");
+            throw new BusinessException("Cet email est déjà utilisé");
         }
         if (request.getUsername() != null && !request.getUsername().isBlank() && memberRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new BusinessException("Username already exists");
+            throw new BusinessException("Ce nom d'utilisateur existe déjà");
         }
 
         User user = User.builder()
@@ -47,7 +54,7 @@ public class MemberService {
         User savedUser = userRepository.save(user);
 
         Administrator administrator = adminRepository.findById(request.getAdminId())
-                .orElseThrow(() -> new BusinessException("Administrator not found"));
+                .orElseThrow(() -> new BusinessException("Administrateur introuvable"));
 
         Member member = Member.builder()
                 .user(savedUser)
@@ -58,20 +65,93 @@ public class MemberService {
                 .active(true)
                 .build();
 
-        return memberRepository.save(member);
+        Member savedMember = memberRepository.save(member);
+        
+        // Initializing Solidarity Debt for the new member
+        // New members start with zero debt for past events
+        SolidarityDebt initialDebt = SolidarityDebt.builder()
+                .member(savedMember)
+                .totalDue(BigDecimal.ZERO)
+                .totalPaid(BigDecimal.ZERO)
+                .remainingDebt(BigDecimal.ZERO)
+                .status("UP_TO_DATE")
+                .build();
+        solidarityDebtRepository.save(initialDebt);
+
+        // Record Registration Fee Payment automatically
+        // Fixed amount as it does not depend on an exercise
+        BigDecimal amount = new BigDecimal("50000.00");
+
+        Cashbox inscriptionCashbox = cashboxRepository.findByName(CashboxName.INSCRIPTION)
+                .orElseThrow(() -> new BusinessException("Caisse d'inscription introuvable"));
+
+        // Update cashbox balance
+        inscriptionCashbox.setBalance(inscriptionCashbox.getBalance().add(amount));
+        cashboxRepository.save(inscriptionCashbox);
+
+        // Create Payment record
+        Payment payment = Payment.builder()
+                .member(savedMember)
+                .cashbox(inscriptionCashbox)
+                .administrator(administrator)
+                .paymentType(PaymentType.INSCRIPTION)
+                .amount(amount)
+                .paymentDate(LocalDateTime.now())
+                .status("COMPLETED")
+                .build();
+        paymentRepository.save(payment);
+
+        // Record in Transaction Log
+        TransactionLog log = TransactionLog.builder()
+                .transactionDate(LocalDateTime.now())
+                .member(savedMember)
+                .cashbox(inscriptionCashbox)
+                .type(TransactionType.INFLOW)
+                .category("INSCRIPTION_PAYMENT")
+                .amount(amount)
+                .referenceTable("member")
+                .referenceId(savedMember.getId())
+                .description("Automatic registration fee payment for " + savedMember.getUsername())
+                .build();
+        transactionLogRepository.save(log);
+
+        return savedMember;
     }
 
     public List<Member> getAllMembers() {
-        return memberRepository.findAll();
+        List<Member> members = memberRepository.findAll();
+        
+        // Ensure all administrators also have a Member profile
+        List<Administrator> admins = adminRepository.findAll();
+        boolean renewed = false;
+        for (Administrator admin : admins) {
+            if (memberRepository.findByUser(admin.getUser()).isEmpty()) {
+                Member virtualMember = Member.builder()
+                        .user(admin.getUser())
+                        .administrator(admin)
+                        .registrationNumber("ADM-" + admin.getId())
+                        .username(admin.getUsername())
+                        .inscriptionDate(java.time.LocalDate.now())
+                        .active(true)
+                        .build();
+                memberRepository.save(virtualMember);
+                renewed = true;
+            }
+        }
+        
+        if (renewed) {
+            return memberRepository.findAll();
+        }
+        return members;
     }
 
     public Member getMemberById(Long id) {
-        return memberRepository.findById(id).orElseThrow(() -> new BusinessException("Member not found"));
+        return memberRepository.findById(id).orElseThrow(() -> new BusinessException("Membre introuvable"));
     }
 
     public Member getMemberByEmail(String email) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new BusinessException("User not found"));
-        return memberRepository.findByUser(user).orElseThrow(() -> new BusinessException("Member profile not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new BusinessException("Utilisateur introuvable"));
+        return memberRepository.findByUser(user).orElseThrow(() -> new BusinessException("Profil membre introuvable"));
     }
 
     @Transactional
@@ -96,6 +176,13 @@ public class MemberService {
         memberRepository.save(member);
     }
 
+    @Transactional
+    public void activateMember(Long id) {
+        Member member = getMemberById(id);
+        member.setActive(true);
+        memberRepository.save(member);
+    }
+
     public String getMemberStatus(Long id) {
         Member member = getMemberById(id);
         if (!member.isActive()) return "INACTIF";
@@ -103,12 +190,35 @@ public class MemberService {
         return "EN_REGLE";
     }
 
-    public java.util.Map<String, Object> getMemberDebts(Long id) {
-        Member member = getMemberById(id);
-        java.util.Map<String, Object> debts = new java.util.HashMap<>();
-        debts.put("solidarity", 0); // To integrate with SolidarityService later
-        debts.put("borrowing", 0);
-        return debts;
+    public java.util.List<java.util.Map<String, Object>> getMemberDebts(Long id) {
+        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        
+        // 1. Solidarity Debt
+        solidarityDebtRepository.findByMemberId(id).ifPresent(sDebt -> {
+            if (sDebt.getRemainingDebt().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id", "solidarity-" + sDebt.getId());
+                map.put("type", "SOLIDARITY");
+                map.put("label", "Dette Solidarité");
+                map.put("amount", sDebt.getRemainingDebt());
+                list.add(map);
+            }
+        });
+
+        // 2. Loans (Borrowings)
+        borrowingRepository.findByMemberId(id).forEach(loan -> {
+            if (loan.getStatus() != com.mutuelle.enums.BorrowingStatus.COMPLETED && 
+                loan.getRemainingBalance().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id", "loan-" + loan.getId());
+                map.put("type", "LOAN");
+                map.put("label", "Remboursement Prêt #" + loan.getId());
+                map.put("amount", loan.getRemainingBalance());
+                list.add(map);
+            }
+        });
+
+        return list;
     }
 
     @Transactional
@@ -117,5 +227,18 @@ public class MemberService {
         User user = member.getUser();
         memberRepository.delete(member);
         userRepository.delete(user);
+    }
+
+    @Transactional
+    public Member updateProfile(Long id, String name, String firstName, String username, String tel, String address) {
+        Member member = getMemberById(id);
+        User user = member.getUser();
+        user.setName(name);
+        user.setFirstName(firstName);
+        user.setTel(tel);
+        user.setAddress(address);
+        member.setUsername(username);
+        userRepository.save(user);
+        return memberRepository.save(member);
     }
 }

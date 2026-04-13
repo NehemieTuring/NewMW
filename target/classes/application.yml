@@ -1,6 +1,6 @@
 spring:
   application:
-    name: mutuelle-mobile
+    name: mutuelle-web
   datasource:
     url: jdbc:mysql://localhost:3306/mutuellen?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
@@ -25,7 +25,7 @@ server:
     context-path: /api
 
 jwt:
-  secret: ${JWT_SECRET:mySecretKeyForMutuelleMobileApplication2024VeryLongAndSecureWithExtraLengthToMeet512BitRequirement}
+  secret: ${JWT_SECRET:mySecretKeyForMutuelleWebApplication2024VeryLongAndSecureWithExtraLengthToMeet512BitRequirement}
   expiration: 86400000
 
 chat:

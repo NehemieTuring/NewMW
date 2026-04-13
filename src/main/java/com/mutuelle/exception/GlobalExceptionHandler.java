@@ -41,6 +41,17 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(errorMessage, HttpStatus.BAD_REQUEST);
     }
 
+    // CATCH-ALL: captures any unhandled exception and returns its real message
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Object> handleAllExceptions(Exception ex) {
+        ex.printStackTrace(); // Print full stack trace to server console for debugging
+        String message = ex.getMessage();
+        if (message == null || message.isBlank()) {
+            message = ex.getClass().getSimpleName();
+        }
+        return buildErrorResponse("Erreur serveur: " + message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     private ResponseEntity<Object> buildErrorResponse(String message, HttpStatus status) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());

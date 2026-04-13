@@ -20,7 +20,7 @@ import java.util.Map;
 @RequestMapping("/admin/super")
 @RequiredArgsConstructor
 @Tag(name = "Super Admin API", description = "Endpoints restricted to Super Admins")
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN')")
 public class SuperAdminController {
 
     private final AdminService adminService;

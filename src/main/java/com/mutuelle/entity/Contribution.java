@@ -23,7 +23,7 @@ public class Contribution {
     private Help help;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id")
     private Member member;
 
     @Column(precision = 15, scale = 2, nullable = false)
@@ -31,6 +31,9 @@ public class Contribution {
 
     @Column(nullable = false)
     private String status = "PENDING";
+
+    @Column(length = 500)
+    private String description;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

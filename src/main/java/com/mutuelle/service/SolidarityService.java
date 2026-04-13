@@ -31,7 +31,7 @@ public class SolidarityService {
         Member member = memberService.getMemberById(memberId);
         
         Cashbox solidarityCashbox = cashboxRepository.findByName(CashboxName.SOLIDARITY)
-                .orElseThrow(() -> new BusinessException("Solidarity cashbox not found"));
+                .orElseThrow(() -> new BusinessException("Caisse de solidarité introuvable"));
 
         Solidarity solidarity = Solidarity.builder()
                 .member(member)
@@ -100,7 +100,12 @@ public class SolidarityService {
 
     public SolidarityDebt getMemberDebt(Long memberId) {
         return solidarityDebtRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new BusinessException("No solidarity debt record found for member " + memberId));
+                .orElse(SolidarityDebt.builder()
+                        .totalDue(BigDecimal.ZERO)
+                        .totalPaid(BigDecimal.ZERO)
+                        .remainingDebt(BigDecimal.ZERO)
+                        .status("UP_TO_DATE")
+                        .build());
     }
 
     public List<Solidarity> getMemberHistory(Long memberId) {

@@ -124,4 +124,8 @@ public class RefuelingService {
         refueling.setStatus("DISTRIBUTED");
         return refuelingRepository.save(refueling);
     }
+
+    public List<RefuelingDistribution> getDistributions(Long refuelingId) {
+        return distributionRepository.findByRefuelingId(refuelingId);
+    }
 }

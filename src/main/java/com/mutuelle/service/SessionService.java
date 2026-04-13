@@ -21,7 +21,15 @@ public class SessionService {
 
     @Transactional
     public Session createSession(Session session) {
-        Exercise activeExercise = exerciseService.getActiveExercise();
+        Exercise targetExercise;
+        if (session.getExercise() != null && session.getExercise().getId() != null) {
+             targetExercise = exerciseService.getAllExercises().stream()
+                     .filter(e -> e.getId().equals(session.getExercise().getId()))
+                     .findFirst()
+                     .orElseThrow(() -> new BusinessException("Exercice spécifié introuvable"));
+        } else {
+             targetExercise = exerciseService.getActiveExercise();
+        }
         
         // Deactivate old active session
         sessionRepository.findByActiveTrue().ifPresent(s -> {
@@ -29,7 +37,7 @@ public class SessionService {
             sessionRepository.save(s);
         });
 
-        session.setExercise(activeExercise);
+        session.setExercise(targetExercise);
         session.setActive(true);
         session.setState(SessionState.OPEN);
         return sessionRepository.save(session);
@@ -38,7 +46,7 @@ public class SessionService {
     @Transactional
     public Session closeSession(Long id) {
         Session session = sessionRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Session not found"));
+                .orElseThrow(() -> new BusinessException("Session introuvable"));
         
         session.setState(SessionState.CLOSED);
         session.setClosedAt(LocalDateTime.now());
@@ -52,7 +60,7 @@ public class SessionService {
 
     public Session getActiveSession() {
         return sessionRepository.findByActiveTrue()
-                .orElseThrow(() -> new BusinessException("No active session found"));
+                .orElseThrow(() -> new BusinessException("Aucune session active trouvée"));
     }
 
     @Transactional

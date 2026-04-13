@@ -10,12 +10,16 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ChatService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
+    private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
     public ChatMessage sendMessage(Long senderId, Long receiverId, String content) {
         User sender = userRepository.findById(senderId).orElseThrow();
@@ -29,7 +33,16 @@ public class ChatService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return chatMessageRepository.save(message);
+        ChatMessage savedMessage = chatMessageRepository.save(message);
+        
+        // Broadcast to receiver's private queue
+        messagingTemplate.convertAndSendToUser(
+            receiver.getId().toString(), 
+            "/queue/messages", 
+            savedMessage
+        );
+        
+        return savedMessage;
     }
 
     public List<ChatMessage> getMessages(Long userId, Long otherUserId) {
@@ -48,12 +61,9 @@ public class ChatService {
     }
 
     public List<User> getConversations(Long userId) {
-        // Simple logic: get all messages where user is sender or receiver, extract unique other users
-        // This is a bit inefficient without a dedicated query but works for now.
-        List<ChatMessage> sent = chatMessageRepository.findAll(); // Should be filtered in a real app
-        return sent.stream()
-                .filter(m -> m.getSender().getId().equals(userId) || m.getReceiver().getId().equals(userId))
-                .map(m -> m.getSender().getId().equals(userId) ? m.getReceiver() : m.getSender())
+        // Optimized: get unique counterparts via repository query
+        return chatMessageRepository.findExchangedUsers(userId).stream()
+                .filter(u -> u.getType() != com.mutuelle.enums.RoleType.SUPER_ADMIN)
                 .distinct()
                 .toList();
     }

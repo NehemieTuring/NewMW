@@ -1,6 +1,6 @@
-# Mutuelle Mobile Backend
+# Mutuelle Web Backend
 
-Backend pour la gestion d'une mutuelle mobile avec Spring Boot 3, JWT, et MySQL.
+Backend pour la gestion d'une mutuelle web avec Spring Boot 3, JWT, et MySQL.
 
 ## Technologies
 - Java 17

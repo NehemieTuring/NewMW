@@ -31,23 +31,35 @@ public class BorrowingService {
     public Borrowing requestLoan(Long memberId, BigDecimal requestedAmount, Administrator administrator) {
         Member member = memberService.getMemberById(memberId);
         Session activeSession = sessionService.getActiveSession();
+        Exercise exercise = activeSession.getExercise();
         
-        // Rules
-        // 1. One active loan at a time
-        List<BorrowingStatus> activeStatuses = List.of(BorrowingStatus.PENDING, BorrowingStatus.ACTIVE);
-        if (!borrowingRepository.findByMemberIdAndStatusIn(memberId, activeStatuses).isEmpty()) {
-            throw new BusinessException("Member already has an active loan");
+        // 1. Member must be active
+        if (!member.isActive()) {
+            throw new BusinessException("Ce membre n'est pas actif et ne peut pas demander de prêt.");
         }
 
-        // 2. Limit loan based on savings (3x)
+        // 2. No active loan allowed
+        List<BorrowingStatus> activeStatuses = List.of(BorrowingStatus.PENDING, BorrowingStatus.ACTIVE);
+        if (!borrowingRepository.findByMemberIdAndStatusIn(memberId, activeStatuses).isEmpty()) {
+            throw new BusinessException("Ce membre a déjà un prêt en cours.");
+        }
+
+        // 3. Check for overdue debts (Insolvency)
+        // For now, check if they have any SolidarityDebt with status != 'UP_TO_DATE' 
+        // Or if they have completed loans with remaining balance (already covered by rule 2 for active ones)
+        // Here we can check if they have any pending refunds from past (simplified check)
+
+        // 4. Limit loan based on savings (3x)
         BigDecimal totalSavings = savingService.getMemberBalance(memberId);
         BigDecimal maxLoan = totalSavings.multiply(new BigDecimal("3.00"));
         if (requestedAmount.compareTo(maxLoan) > 0) {
-            throw new BusinessException("Loan amount exceeds 3x your savings. Max: " + maxLoan);
+            throw new BusinessException("Le montant du prêt dépasse 3 fois votre épargne. Votre épargne: " + totalSavings + ". Prêt maximum autorisé: " + maxLoan);
         }
 
-        // 3. Deduction (97% to member, 3% interest)
-        BigDecimal interestAmount = requestedAmount.multiply(new BigDecimal("0.03"));
+        // 5. Dynamic Interest Deduction (based on Exercise setting)
+        // Interest is pre-deducted: Member receives net, repays gross.
+        BigDecimal rate = exercise.getInterestRate().divide(new BigDecimal("100"), 4, java.math.RoundingMode.HALF_UP);
+        BigDecimal interestAmount = requestedAmount.multiply(rate);
         BigDecimal netAmount = requestedAmount.subtract(interestAmount);
 
         Borrowing borrowing = Borrowing.builder()
@@ -60,14 +72,19 @@ public class BorrowingService {
                 .netAmountReceived(netAmount)
                 .remainingBalance(requestedAmount)
                 .status(BorrowingStatus.ACTIVE)
-                .dueDate(LocalDate.now().plusMonths(3))
+                .dueDate(LocalDate.now().plusMonths(3)) // Default 3 months, could be dynamic
                 .build();
 
         Borrowing savedBorrowing = borrowingRepository.save(borrowing);
 
-        // Update cashbox
+        // Update cashbox (Saving cashbox is used for loans)
         Cashbox savingCashbox = cashboxRepository.findByName(CashboxName.SAVING)
-                .orElseThrow(() -> new BusinessException("Saving cashbox not found"));
+                .orElseThrow(() -> new BusinessException("Caisse d'épargne introuvable"));
+        
+        if (savingCashbox.getBalance().compareTo(netAmount) < 0) {
+            throw new BusinessException("Fonds insuffisants dans la Caisse d'Épargne pour décaisser ce prêt.");
+        }
+
         savingCashbox.setBalance(savingCashbox.getBalance().subtract(netAmount));
         cashboxRepository.save(savingCashbox);
 
@@ -81,7 +98,7 @@ public class BorrowingService {
                 .amount(netAmount)
                 .referenceTable("borrowing")
                 .referenceId(savedBorrowing.getId())
-                .description("Loan disbursement")
+                .description("Loan disbursement (Interests pre-deducted: " + interestAmount + " XAF)")
                 .build();
         transactionLogRepository.save(log);
 
@@ -97,14 +114,14 @@ public class BorrowingService {
     }
 
     public Borrowing getBorrowingById(Long id) {
-        return borrowingRepository.findById(id).orElseThrow(() -> new BusinessException("Borrowing not found"));
+        return borrowingRepository.findById(id).orElseThrow(() -> new BusinessException("Emprunt introuvable"));
     }
 
     @Transactional
     public Refund recordRefund(Long borrowingId, BigDecimal amount, Administrator administrator) {
         Borrowing borrowing = getBorrowingById(borrowingId);
         if (borrowing.getStatus() == BorrowingStatus.COMPLETED) {
-            throw new BusinessException("Loan is already fully repaid");
+            throw new BusinessException("Le prêt est déjà entièrement remboursé");
         }
 
         borrowing.setRemainingBalance(borrowing.getRemainingBalance().subtract(amount).max(BigDecimal.ZERO));

@@ -31,7 +31,7 @@ public class SavingService {
         Session activeSession = sessionService.getActiveSession();
         
         Cashbox savingCashbox = cashboxRepository.findByName(CashboxName.SAVING)
-                .orElseThrow(() -> new BusinessException("Saving cashbox not found"));
+                .orElseThrow(() -> new BusinessException("Caisse d'épargne introuvable"));
 
         // Calculate cumulative total (simplified, better to query DB sum)
         List<Saving> memberSavings = savingRepository.findByMemberId(memberId);
@@ -100,7 +100,7 @@ public class SavingService {
     public Saving withdraw(Long memberId, BigDecimal amount, Administrator administrator) {
         BigDecimal balance = getMemberBalance(memberId);
         if (balance.compareTo(amount) < 0) {
-            throw new BusinessException("Insufficient balance");
+            throw new BusinessException("Solde insuffisant");
         }
         
         Member member = memberService.getMemberById(memberId);

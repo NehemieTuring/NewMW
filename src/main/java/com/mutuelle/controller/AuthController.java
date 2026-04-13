@@ -33,4 +33,10 @@ public class AuthController {
     public ResponseEntity<com.mutuelle.entity.Member> registerMember(@Valid @RequestBody com.mutuelle.dto.request.RegisterMemberRequest request) {
         return ResponseEntity.ok(memberService.register(request));
     }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout the current user")
+    public ResponseEntity<Void> logout() {
+        return ResponseEntity.noContent().build();
+    }
 }

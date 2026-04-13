@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -17,18 +18,56 @@ public class ExerciseService {
     private final ExerciseRepository exerciseRepository;
 
     @Transactional
-    public Exercise createExercise(Exercise exercise) {
-        if (exerciseRepository.findByYear(exercise.getYear()).isPresent()) {
-            throw new BusinessException("Exercise for year " + exercise.getYear() + " already exists");
+    public Exercise createExercise(Exercise exercise, Administrator administrator) {
+        // Validate year
+        if (exercise.getYear() == null || exercise.getYear().trim().isEmpty()) {
+            throw new BusinessException("L'année de l'exercice est obligatoire.");
         }
-        
-        // Deactivate current active exercise if any (optional, business rule says one at a time)
-        exerciseRepository.findByActiveTrue().ifPresent(e -> {
-            e.setActive(false);
-            exerciseRepository.save(e);
-        });
+        exercise.setYear(exercise.getYear().trim());
 
+        // Check for duplicate year
+        if (exerciseRepository.findByYear(exercise.getYear()).isPresent()) {
+            throw new BusinessException("L'exercice pour l'année " + exercise.getYear() + " existe déjà.");
+        }
+
+        // Validate dates
+        if (exercise.getStartDate() == null) {
+            throw new BusinessException("La date de début est obligatoire.");
+        }
+        if (exercise.getEndDate() == null) {
+            throw new BusinessException("La date de fin est obligatoire.");
+        }
+
+        // Deactivate all current exercises
+        exerciseRepository.deactivateAll();
+
+        // Set defaults for missing financial fields
+        if (exercise.getSolidarityAmount() == null) {
+            exercise.setSolidarityAmount(new BigDecimal("150000.00"));
+        }
+        if (exercise.getAgapeAmount() == null) {
+            exercise.setAgapeAmount(new BigDecimal("45000.00"));
+        }
+        if (exercise.getPenaltyAmount() == null) {
+            exercise.setPenaltyAmount(new BigDecimal("15000.00"));
+        }
+        if (exercise.getInterestRate() == null) {
+            exercise.setInterestRate(new BigDecimal("3.00"));
+        }
+        if (exercise.getInscriptionAmount() == null) {
+            exercise.setInscriptionAmount(new BigDecimal("50000.00"));
+        }
+
+        // Set the administrator and activate
+        exercise.setAdministrator(administrator);
         exercise.setActive(true);
+        exercise.setId(null); // Ensure we create a NEW exercise
+
+        System.out.println("Saving exercise: year=" + exercise.getYear() 
+            + ", start=" + exercise.getStartDate() 
+            + ", end=" + exercise.getEndDate()
+            + ", admin=" + administrator.getId());
+
         return exerciseRepository.save(exercise);
     }
 
@@ -41,11 +80,25 @@ public class ExerciseService {
                 .orElseThrow(() -> new BusinessException("No active exercise found"));
     }
 
+    public java.util.Optional<Exercise> findActiveExercise() {
+        return exerciseRepository.findByActiveTrue();
+    }
+
     @Transactional
     public void closeExercise(Long id) {
         Exercise exercise = exerciseRepository.findById(id).orElseThrow();
         exercise.setActive(false);
         exerciseRepository.save(exercise);
+    }
+
+    @Transactional
+    public Exercise updateExercise(Long id, Exercise details) {
+        Exercise exercise = exerciseRepository.findById(id).orElseThrow();
+        if (details.getSolidarityAmount() != null) exercise.setSolidarityAmount(details.getSolidarityAmount());
+        if (details.getAgapeAmount() != null) exercise.setAgapeAmount(details.getAgapeAmount());
+        if (details.getPenaltyAmount() != null) exercise.setPenaltyAmount(details.getPenaltyAmount());
+        if (details.getInterestRate() != null) exercise.setInterestRate(details.getInterestRate());
+        return exerciseRepository.save(exercise);
     }
 
     @Transactional

@@ -48,7 +48,7 @@ public class AuthService {
                         .orElse(null);
             }
 
-            return new JwtResponse(jwt, user.getEmail(), user.getType().name(), subRole);
+            return new JwtResponse(user.getId(), jwt, user.getEmail(), user.getEmail(), user.getType().name(), subRole);
         } catch (org.springframework.security.authentication.BadCredentialsException ex) {
             throw new com.mutuelle.exception.UnauthorizedException("Identifiants incorrects");
         }

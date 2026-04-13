@@ -14,8 +14,8 @@ public class OpenApiConfig {
     public OpenAPI mutuelleOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Mutuelle Mobile API")
-                        .description("API for managing a mutual mobile application")
+                        .title("Mutuelle Web API")
+                        .description("API for managing a mutual web application")
                         .version("1.0"))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new io.swagger.v3.oas.models.Components()

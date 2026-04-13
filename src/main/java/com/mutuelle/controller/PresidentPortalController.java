@@ -15,7 +15,7 @@ import java.util.Map;
 @RequestMapping("/president")
 @RequiredArgsConstructor
 @Tag(name = "President API", description = "Read-only access for the President")
-@PreAuthorize("hasRole('PRESIDENT') or hasRole('SUPER_ADMIN')")
+@PreAuthorize("hasAuthority('ROLE_PRESIDENT') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_SUPER_ADMIN') or hasAuthority('ROLE_SECRETAIRE_GENERALE')")
 public class PresidentPortalController {
 
     private final MemberService memberService;
@@ -41,13 +41,18 @@ public class PresidentPortalController {
         return ResponseEntity.ok(memberService.getMemberById(id));
     }
 
+    @GetMapping("/admins")
+    public ResponseEntity<List<Administrator>> getAdmins() {
+        return ResponseEntity.ok(adminService.getAllAdmins());
+    }
+
     @GetMapping("/members/{id}/status")
     public ResponseEntity<String> getMemberStatus(@PathVariable Long id) {
         return ResponseEntity.ok(memberService.getMemberStatus(id));
     }
 
     @GetMapping("/members/{id}/debts")
-    public ResponseEntity<Map<String, Object>> getMemberDebts(@PathVariable Long id) {
+    public ResponseEntity<List<Map<String, Object>>> getMemberDebts(@PathVariable Long id) {
         return ResponseEntity.ok(memberService.getMemberDebts(id));
     }
 
@@ -103,7 +108,7 @@ public class PresidentPortalController {
 
     @GetMapping("/dashboard/exercises/{exerciseId}")
     public ResponseEntity<Map<String, Object>> getExerciseBilan(@PathVariable Long exerciseId) {
-        return ResponseEntity.ok(Map.of("exerciseId", exerciseId));
+        return ResponseEntity.ok(dashboardService.getExerciseBilan(exerciseId));
     }
 
     @GetMapping("/dashboard/transactions")
@@ -113,7 +118,7 @@ public class PresidentPortalController {
 
     @GetMapping("/dashboard/sessions/{sessionId}")
     public ResponseEntity<Map<String, Object>> getSessionBilan(@PathVariable Long sessionId) {
-        return ResponseEntity.ok(Map.of("sessionId", sessionId));
+        return ResponseEntity.ok(dashboardService.getSessionBilan(sessionId));
     }
 
     @GetMapping("/dashboard/cashboxes")
