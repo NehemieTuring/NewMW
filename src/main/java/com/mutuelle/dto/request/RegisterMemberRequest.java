@@ -22,7 +22,6 @@ public class RegisterMemberRequest {
     @NotBlank
     private String password;
 
-    private String registrationNumber;
 
     private String username;
 

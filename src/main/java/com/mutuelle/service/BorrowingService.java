@@ -1,6 +1,7 @@
 package com.mutuelle.service;
 
 import com.mutuelle.entity.*;
+import java.time.Clock;
 import com.mutuelle.enums.BorrowingStatus;
 import com.mutuelle.enums.CashboxName;
 import com.mutuelle.enums.TransactionType;
@@ -26,6 +27,7 @@ public class BorrowingService {
     private final CashboxRepository cashboxRepository;
     private final TransactionLogRepository transactionLogRepository;
     private final RefundRepository refundRepository;
+    private final Clock clock;
 
     @Transactional
     public Borrowing requestLoan(Long memberId, BigDecimal requestedAmount, Administrator administrator) {
@@ -49,11 +51,18 @@ public class BorrowingService {
         // Or if they have completed loans with remaining balance (already covered by rule 2 for active ones)
         // Here we can check if they have any pending refunds from past (simplified check)
 
-        // 4. Limit loan based on savings (3x)
+        // 3. Limit loan based on degressive tiers (Risk Management)
         BigDecimal totalSavings = savingService.getMemberBalance(memberId);
-        BigDecimal maxLoan = totalSavings.multiply(new BigDecimal("3.00"));
+        BigDecimal maxLoan = calculateMaxLoan(totalSavings);
+        
         if (requestedAmount.compareTo(maxLoan) > 0) {
-            throw new BusinessException("Le montant du prêt dépasse 3 fois votre épargne. Votre épargne: " + totalSavings + ". Prêt maximum autorisé: " + maxLoan);
+            throw new BusinessException(String.format(
+                "Le montant demandé (%s XAF) dépasse votre droit d'emprunt. " +
+                "Avec une épargne de %s XAF, votre plafond est de %s XAF (selon les paliers de risque).",
+                requestedAmount.toPlainString(),
+                totalSavings.toPlainString(),
+                maxLoan.toPlainString()
+            ));
         }
 
         // 5. Dynamic Interest Deduction (based on Exercise setting)
@@ -72,7 +81,7 @@ public class BorrowingService {
                 .netAmountReceived(netAmount)
                 .remainingBalance(requestedAmount)
                 .status(BorrowingStatus.ACTIVE)
-                .dueDate(LocalDate.now().plusMonths(3)) // Default 3 months, could be dynamic
+                .dueDate(LocalDate.now(clock).plusMonths(3)) // Default 3 months, could be dynamic
                 .build();
 
         Borrowing savedBorrowing = borrowingRepository.save(borrowing);
@@ -90,7 +99,7 @@ public class BorrowingService {
 
         // Record log
         TransactionLog log = TransactionLog.builder()
-                .transactionDate(LocalDateTime.now())
+                .transactionDate(LocalDateTime.now(clock))
                 .member(member)
                 .cashbox(savingCashbox)
                 .type(TransactionType.OUTFLOW)
@@ -120,13 +129,30 @@ public class BorrowingService {
     @Transactional
     public Refund recordRefund(Long borrowingId, BigDecimal amount, Administrator administrator) {
         Borrowing borrowing = getBorrowingById(borrowingId);
+        
+        // 1. Verification of status
         if (borrowing.getStatus() == BorrowingStatus.COMPLETED) {
-            throw new BusinessException("Le prêt est déjà entièrement remboursé");
+            throw new BusinessException("Ce prêt est déjà entièrement soldé.");
         }
 
-        borrowing.setRemainingBalance(borrowing.getRemainingBalance().subtract(amount).max(BigDecimal.ZERO));
+        // 2. Validation of amount
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("Le montant du remboursement doit être supérieur à zéro.");
+        }
+        
+        if (amount.compareTo(borrowing.getRemainingBalance()) > 0) {
+            throw new BusinessException("Le montant (" + amount + ") dépasse le reste à payer (" + borrowing.getRemainingBalance() + ").");
+        }
+
+        Session activeSession = sessionService.getActiveSession();
+
+        // 3. Update debt
+        borrowing.setRemainingBalance(borrowing.getRemainingBalance().subtract(amount));
+        
+        // 4. Update status if settled
         if (borrowing.getRemainingBalance().compareTo(BigDecimal.ZERO) <= 0) {
             borrowing.setStatus(BorrowingStatus.COMPLETED);
+            borrowing.setRemainingBalance(BigDecimal.ZERO);
         }
         borrowingRepository.save(borrowing);
 
@@ -135,18 +161,66 @@ public class BorrowingService {
         savingCashbox.setBalance(savingCashbox.getBalance().add(amount));
         cashboxRepository.save(savingCashbox);
 
-        return Refund.builder()
+        Refund refund = Refund.builder()
                 .borrowing(borrowing)
                 .member(borrowing.getMember())
-                .session(borrowing.getSession())
-                .exercise(borrowing.getSession().getExercise())
+                .session(activeSession)
+                .exercise(activeSession.getExercise())
                 .amount(amount)
                 .remainingBalance(borrowing.getRemainingBalance())
-                .refundDate(LocalDate.now())
+                .refundDate(LocalDate.now(clock))
                 .build();
+                
+        Refund savedRefund = refundRepository.save(refund);
+
+        // Record log
+        TransactionLog log = TransactionLog.builder()
+                .transactionDate(LocalDateTime.now(clock))
+                .member(borrowing.getMember())
+                .cashbox(savingCashbox)
+                .type(TransactionType.INFLOW)
+                .category("LOAN_REFUND")
+                .amount(amount)
+                .referenceTable("refund")
+                .referenceId(savedRefund.getId())
+                .description("Remboursement de prêt pour l'emprunt #" + borrowing.getId())
+                .build();
+        transactionLogRepository.save(log);
+
+        return savedRefund;
     }
 
     public List<Refund> getRefundsByBorrowingId(Long borrowingId) {
         return refundRepository.findByBorrowingId(borrowingId);
+    }
+
+    /**
+     * Calcule le montant maximum qu'un membre peut emprunter selon ses paliers d'épargne.
+     * Paliers dégressifs pour limiter le risque :
+     * - 0 - 500 000 XAF : 5 fois l'épargne
+     * - 500 001 - 1 000 000 XAF : 4 fois
+     * - 1 000 001 - 1 500 000 XAF : 3 fois
+     * - 1 500 001 - 2 000 000 XAF : 2 fois
+     * - Plus de 2 000 000 XAF : 1,5 fois
+     */
+    public BigDecimal calculateMaxLoan(BigDecimal savings) {
+        if (savings == null) return BigDecimal.ZERO;
+        
+        long s = savings.longValue();
+        BigDecimal multiplier;
+
+        if (s <= 500000) {
+            multiplier = new BigDecimal("5");
+        } else if (s <= 1000000) {
+            multiplier = new BigDecimal("4");
+        } else if (s <= 1500000) {
+            multiplier = new BigDecimal("3");
+        } else if (s <= 2000000) {
+            multiplier = new BigDecimal("2");
+        } else {
+            multiplier = new BigDecimal("1.5");
+        }
+
+        return savings.multiply(multiplier).setScale(0, java.math.RoundingMode.HALF_UP);
     }
 }

@@ -20,7 +20,7 @@ public class SessionService {
     private final ExerciseService exerciseService;
 
     @Transactional
-    public Session createSession(Session session) {
+    public Session createSession(Session session, com.mutuelle.entity.Administrator administrator) {
         Exercise targetExercise;
         if (session.getExercise() != null && session.getExercise().getId() != null) {
              targetExercise = exerciseService.getAllExercises().stream()
@@ -31,15 +31,24 @@ public class SessionService {
              targetExercise = exerciseService.getActiveExercise();
         }
         
-        // Deactivate old active session
+        // Deactivate old active session if any
         sessionRepository.findByActiveTrue().ifPresent(s -> {
             s.setActive(false);
             sessionRepository.save(s);
         });
 
+        // Auto-calculate session number
+        Integer maxNum = sessionRepository.findMaxSessionNumberByExerciseId(targetExercise.getId());
+        session.setSessionNumber(maxNum == null ? 1 : maxNum + 1);
+
         session.setExercise(targetExercise);
+        session.setAdministrator(administrator);
         session.setActive(true);
         session.setState(SessionState.OPEN);
+        
+        // Ensure ID is null for new creation
+        session.setId(null);
+        
         return sessionRepository.save(session);
     }
 
@@ -60,7 +69,7 @@ public class SessionService {
 
     public Session getActiveSession() {
         return sessionRepository.findByActiveTrue()
-                .orElseThrow(() -> new BusinessException("Aucune session active trouvée"));
+                .orElseThrow(() -> new BusinessException("Opération impossible : Aucune session n'est marquée comme active. Veuillez activer une session dans l'administration."));
     }
 
     @Transactional

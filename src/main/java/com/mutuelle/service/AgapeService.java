@@ -28,12 +28,15 @@ public class AgapeService {
 
     @Transactional
     public Agape createAgape(String title, String description, BigDecimal amount, LocalDate date, Long sessionId, Administrator admin) {
-        // Enforce financing from Solidarity Fund (Fonds Social)
-        Cashbox solidarityBox = cashboxRepository.findByName(CashboxName.SOLIDARITY)
-                .orElseThrow(() -> new BusinessException("Caisse de solidarité introuvable"));
+        // Enforce financing from Inscription Fund (Registration)
+        Cashbox inscriptionBox = cashboxRepository.findByName(CashboxName.INSCRIPTION)
+                .orElseThrow(() -> new BusinessException("Caisse d'inscription introuvable"));
 
-        if (solidarityBox.getBalance().compareTo(amount) < 0) {
-            throw new BusinessException("Fonds insuffisants dans le Fonds Social pour cette Agape");
+        // Fixed amount for Agape according to rule: 45,000
+        BigDecimal agapeAmount = new BigDecimal("45000.00");
+        
+        if (inscriptionBox.getBalance().compareTo(agapeAmount) < 0) {
+            throw new BusinessException("Fonds insuffisants dans le compte des Inscriptions pour cette Agape (Requis: 45 000 XAF)");
         }
 
         Session session = sessionRepository.findById(sessionId)
@@ -42,7 +45,7 @@ public class AgapeService {
         Agape agape = Agape.builder()
                 .title(title)
                 .description(description)
-                .amount(amount)
+                .amount(agapeAmount)
                 .eventDate(date)
                 .session(session)
                 .createdBy(admin)
@@ -50,12 +53,12 @@ public class AgapeService {
 
         Agape savedAgape = agapeRepository.save(agape);
 
-        // Deduct from Solidarity Cashbox
+        // Deduct from Inscription Cashbox
         transactionService.recordTransaction(
-                amount.negate(),
+                agapeAmount.negate(),
                 "AGAPE",
                 "Agape: " + title,
-                solidarityBox,
+                inscriptionBox,
                 null // Not tied to a specific member
         );
 

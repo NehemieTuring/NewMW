@@ -39,42 +39,46 @@ public class RefuelingService {
             throw new BusinessException("Refueling already calculated for this exercise");
         }
 
-        // Logic (simplified)
-        // S = Total outflows from Social Fund (Solidarity)
-        // N = Number of members in rule
-        // S/N per member
-        
         Cashbox solidarityCashbox = cashboxRepository.findByName(CashboxName.SOLIDARITY)
                 .orElseThrow(() -> new BusinessException("Solidarity cashbox not found"));
 
-        // Sum outflows of category SOLIDARITY from transaction log for period exerciseId
-        // BigDecimal totalOutflows = ...
-        BigDecimal totalOutflows = transactionLogRepository.findByCashboxId(solidarityCashbox.getId())
+        // Get all solidarity outflows for the exercise period
+        List<TransactionLog> outflows = transactionLogRepository.findByCashboxId(solidarityCashbox.getId())
                 .stream()
                 .filter(log -> log.getType() == TransactionType.OUTFLOW && "SOLIDARITY_EXPENDITURE".equals(log.getCategory()))
+                .filter(log -> !log.getTransactionDate().isBefore(exercise.getStartDate().atStartOfDay()) && 
+                               !log.getTransactionDate().isAfter(exercise.getEndDate().atTime(23, 59, 59)))
+                .collect(Collectors.toList());
+
+        BigDecimal totalOutflows = outflows.stream()
                 .map(TransactionLog::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<Member> allMembers = memberService.getAllMembers();
-        List<Member> membersInRule = allMembers.stream()
-                .filter(m -> {
-                    SolidarityDebt debt = solidarityDebtRepository.findByMemberId(m.getId()).orElse(null);
-                    return debt != null && "UP_TO_DATE".equals(debt.getStatus());
-                })
-                .collect(Collectors.toList());
+        java.util.Map<Long, BigDecimal> memberDebts = new java.util.HashMap<>();
+        allMembers.forEach(m -> memberDebts.put(m.getId(), BigDecimal.ZERO));
 
-        if (membersInRule.isEmpty()) {
-            throw new BusinessException("No members in rule found for refueling calculation");
+        // Temporal proportional distribution
+        for (TransactionLog tx : outflows) {
+            LocalDate txDate = tx.getTransactionDate().toLocalDate();
+            List<Member> presentMembers = allMembers.stream()
+                    .filter(m -> m.getInscriptionDate() != null && !m.getInscriptionDate().isAfter(txDate))
+                    .collect(Collectors.toList());
+
+            if (!presentMembers.isEmpty()) {
+                BigDecimal share = tx.getAmount().divide(new BigDecimal(presentMembers.size()), 4, RoundingMode.HALF_UP);
+                for (Member m : presentMembers) {
+                    memberDebts.put(m.getId(), memberDebts.get(m.getId()).add(share));
+                }
+            }
         }
-
-        BigDecimal amountPerMember = totalOutflows.divide(new BigDecimal(membersInRule.size()), 2, RoundingMode.HALF_UP);
 
         Refueling refueling = Refueling.builder()
                 .exercise(exercise)
                 .administrator(admin)
                 .totalOutflows(totalOutflows)
-                .eligibleMemberCount(membersInRule.size())
-                .amountPerMember(amountPerMember)
+                .eligibleMemberCount(allMembers.size())
+                .amountPerMember(allMembers.isEmpty() ? BigDecimal.ZERO : totalOutflows.divide(new BigDecimal(allMembers.size()), 2, RoundingMode.HALF_UP)) // Informative average
                 .totalCollected(BigDecimal.ZERO)
                 .surplusToInscription(BigDecimal.ZERO)
                 .distributionDate(LocalDate.now())
@@ -83,28 +87,28 @@ public class RefuelingService {
 
         Refueling savedRefueling = refuelingRepository.save(refueling);
 
-        // Distribute to all (diminishing debt for non-en-regle, cash for en-regle if applicable, but context says to all)
         for (Member member : allMembers) {
-            boolean isInRule = membersInRule.contains(member);
+            BigDecimal debtAmount = memberDebts.get(member.getId()).setScale(2, RoundingMode.HALF_UP);
+            
             RefuelingDistribution dist = RefuelingDistribution.builder()
                     .refueling(savedRefueling)
                     .member(member)
-                    .amountReceived(amountPerMember) // Logical rule: every member gets the amount but non-regle use it to pay debt
-                    .inRule(isInRule)
+                    .amountReceived(debtAmount) // We use amountReceived field to store the debt to pay
+                    .inRule(true) // Default to true, status will be checked on payment
                     .build();
             distributionRepository.save(dist);
 
-            // Logic: non-regle VOIENT LEUR DETTE DIMINUÉE
-            if (!isInRule) {
-                SolidarityDebt debt = solidarityDebtRepository.findByMemberId(member.getId()).orElse(null);
-                if (debt != null) {
-                    debt.setTotalPaid(debt.getTotalPaid().add(amountPerMember));
-                    debt.setRemainingDebt(debt.getRemainingDebt().subtract(amountPerMember).max(BigDecimal.ZERO));
-                    if (debt.getRemainingDebt().compareTo(BigDecimal.ZERO) <= 0) {
-                        debt.setStatus("UP_TO_DATE");
-                    }
-                    solidarityDebtRepository.save(debt);
-                }
+            // Logic: This amount becomes the new Solidarity Debt or Refueling Debt for the member
+            // Depending on the business rule, we might update SolidarityDebt directly or create a new entry
+            // For now, we follow the user's lead that it replaces/sets the debt for next exercise
+            SolidarityDebt debt = solidarityDebtRepository.findByMemberId(member.getId()).orElse(null);
+            if (debt != null) {
+                // For the next exercise, the debt is the refueling amount
+                debt.setTotalDue(debtAmount);
+                debt.setTotalPaid(BigDecimal.ZERO);
+                debt.setRemainingDebt(debtAmount);
+                debt.setStatus(debtAmount.compareTo(BigDecimal.ZERO) > 0 ? "LATE" : "UP_TO_DATE");
+                solidarityDebtRepository.save(debt);
             }
         }
 

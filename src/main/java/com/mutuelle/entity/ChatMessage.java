@@ -22,14 +22,29 @@ public class ChatMessage {
     private User sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "receiver_id", nullable = false)
+    @JoinColumn(name = "receiver_id", nullable = true)
     private User receiver;
 
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = true, length = 2000)
     private String message;
 
-    @Column(name = "is_read")
-    private boolean read = false;
+    @Builder.Default
+    @Column(name = "is_read", nullable = false)
+    private Boolean read = false;
+
+    @Builder.Default
+    @Column(name = "is_delivered", nullable = false)
+    private Boolean delivered = false;
+
+    @Builder.Default
+    @Column(name = "is_edited", nullable = false)
+    private Boolean edited = false;
+
+    private LocalDateTime editedAt;
+
+    private String attachmentUrl;
+    
+    private String attachmentType; // IMAGE, PDF, etc.
 
     @Column(name = "external_message_id", length = 100)
     private String externalMessageId;

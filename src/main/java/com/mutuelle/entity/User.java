@@ -40,6 +40,8 @@ public class User {
 
     private String avatar;
 
+    private LocalDateTime lastSeen;
+
     @Column(nullable = false)
     private String password;
 

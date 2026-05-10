@@ -1,6 +1,7 @@
 package com.mutuelle.entity;
 
 import com.mutuelle.enums.SessionState;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -19,18 +20,24 @@ public class Session {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "exercise_id", nullable = false)
+    @JsonIgnoreProperties({"sessions", "hibernateLazyInitializer", "handler"})
     private Exercise exercise;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "administrator_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "user"})
     private Administrator administrator;
 
     @Column(name = "session_number", nullable = false)
     private Integer sessionNumber;
 
+    @Column(length = 100)
+    private String name;
+
     @Column(nullable = false)
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate date;
 
     @Enumerated(EnumType.STRING)

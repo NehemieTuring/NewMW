@@ -5,6 +5,8 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import org.hibernate.annotations.Formula;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -27,8 +29,6 @@ public class Member {
     @JoinColumn(name = "administrator_id", nullable = false)
     private Administrator administrator;
 
-    @Column(name = "registration_number", nullable = false, unique = true, length = 20)
-    private String registrationNumber;
 
     @Column(nullable = false, unique = true, length = 50)
     private String username;
@@ -46,4 +46,7 @@ public class Member {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Formula("(SELECT COALESCE(SUM(CASE WHEN s.type = 'INFLOW' THEN s.amount ELSE -s.amount END), 0) FROM saving s WHERE s.member_id = id)")
+    private BigDecimal savingsTotal;
 }

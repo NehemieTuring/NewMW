@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface HelpRepository extends JpaRepository<Help, Long> {
     List<Help> findByStatus(String status);
+    List<Help> findByStatusIn(java.util.List<String> statuses);
 }

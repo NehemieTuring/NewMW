@@ -2,6 +2,8 @@ package com.mutuelle.controller;
 
 import com.mutuelle.entity.*;
 import com.mutuelle.service.*;
+import com.mutuelle.enums.BorrowingStatus;
+import com.mutuelle.exception.BusinessException;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -146,6 +148,41 @@ public class TreasurerPortalController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/savings/deposit")
+    public ResponseEntity<Saving> deposit(@RequestParam Long memberId, @RequestParam BigDecimal amount) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(savingService.deposit(memberId, amount, admin));
+    }
+
+    @PostMapping("/solidarity/pay")
+    public ResponseEntity<Solidarity> paySolidarity(@RequestParam Long memberId, @RequestParam BigDecimal amount) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(solidarityService.paySolidarity(memberId, amount, admin));
+    }
+
+    @PostMapping("/borrowings/refund")
+    public ResponseEntity<Refund> refundLoan(@RequestParam Long memberId, @RequestParam BigDecimal amount) {
+        // Find active borrowing for this member to refund
+        List<Borrowing> loans = borrowingService.getMemberLoans(memberId);
+        Borrowing activeLoan = loans.stream()
+                .filter(b -> BorrowingStatus.ACTIVE.equals(b.getStatus()) || BorrowingStatus.PENDING.equals(b.getStatus()))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("Opération impossible : Ce membre n'a aucun emprunt actif à rembourser."));
+                
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(borrowingService.recordRefund(activeLoan.getId(), amount, admin));
+    }
+
+    @PostMapping("/borrowings/grant")
+    public ResponseEntity<Borrowing> grantLoan(@RequestParam Long memberId, @RequestParam BigDecimal amount) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(borrowingService.requestLoan(memberId, amount, admin));
+    }
+
     @GetMapping("/profile")
     public ResponseEntity<Administrator> getProfile() {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
@@ -162,10 +199,13 @@ public class TreasurerPortalController {
     }
 
     @PostMapping("/chat/send")
-    public ResponseEntity<ChatMessage> sendMessage(@RequestParam Long receiverId, @RequestParam String content) {
+    public ResponseEntity<ChatMessage> sendMessage(@RequestParam(required = false) Long receiverId, 
+                                                   @RequestParam(required = false) String content,
+                                                   @RequestParam(required = false) String attachmentUrl,
+                                                   @RequestParam(required = false) String attachmentType) {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         var admin = adminService.getAdminByEmail(email);
-        return ResponseEntity.ok(chatService.sendMessage(admin.getUser().getId(), receiverId, content));
+        return ResponseEntity.ok(chatService.sendMessage(admin.getUser().getId(), receiverId, content, attachmentUrl, attachmentType));
     }
 
     @GetMapping("/chat/conversations")

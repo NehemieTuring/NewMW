@@ -137,10 +137,13 @@ public class PresidentPortalController {
     }
 
     @PostMapping("/chat/send")
-    public ResponseEntity<ChatMessage> sendMessage(@RequestParam Long receiverId, @RequestParam String content) {
+    public ResponseEntity<ChatMessage> sendMessage(@RequestParam(required = false) Long receiverId, 
+                                                   @RequestParam(required = false) String content,
+                                                   @RequestParam(required = false) String attachmentUrl,
+                                                   @RequestParam(required = false) String attachmentType) {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         Administrator admin = adminService.getAdminByEmail(email);
-        return ResponseEntity.ok(chatService.sendMessage(admin.getUser().getId(), receiverId, content));
+        return ResponseEntity.ok(chatService.sendMessage(admin.getUser().getId(), receiverId, content, attachmentUrl, attachmentType));
     }
 
     @GetMapping("/chat/conversations")

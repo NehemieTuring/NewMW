@@ -10,4 +10,5 @@ import java.util.List;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByMemberId(Long memberId);
     List<Payment> findByMemberIdOrderByPaymentDateDesc(Long memberId);
+    List<Payment> findByMemberIdAndPaymentType(Long memberId, com.mutuelle.enums.PaymentType paymentType);
 }

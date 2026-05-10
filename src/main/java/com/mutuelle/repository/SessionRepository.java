@@ -11,4 +11,8 @@ import java.util.Optional;
 public interface SessionRepository extends JpaRepository<Session, Long> {
     Optional<Session> findByActiveTrue();
     List<Session> findByExerciseId(Long exerciseId);
+    List<Session> findByDateBeforeAndStateNotIn(java.time.LocalDate date, java.util.Collection<com.mutuelle.enums.SessionState> states);
+
+    @org.springframework.data.jpa.repository.Query("SELECT MAX(s.sessionNumber) FROM Session s WHERE s.exercise.id = :exerciseId")
+    Integer findMaxSessionNumberByExerciseId(Long exerciseId);
 }

@@ -23,6 +23,7 @@ com\mutuelle\repository\InterestDistributionRepository.class
 com\mutuelle\config\SecurityConfig.class
 com\mutuelle\enums\BorrowingStatus.class
 com\mutuelle\repository\InterestDistributionDetailRepository.class
+com\mutuelle\config\DataInitializerConfig.class
 com\mutuelle\service\MemberService.class
 com\mutuelle\entity\Cashbox$CashboxBuilder.class
 com\mutuelle\entity\Tontine.class
@@ -30,6 +31,9 @@ com\mutuelle\exception\GlobalExceptionHandler.class
 com\mutuelle\repository\SettingsHistoryRepository.class
 com\mutuelle\repository\PenaltyRepository.class
 com\mutuelle\service\DashboardService.class
+com\mutuelle\controller\TestTimeController.class
+com\mutuelle\service\FileStorageService.class
+com\mutuelle\service\SessionScheduler.class
 com\mutuelle\entity\Refund.class
 com\mutuelle\entity\Administrator$AdministratorBuilder.class
 com\mutuelle\entity\Solidarity$SolidarityBuilder.class
@@ -58,6 +62,7 @@ com\mutuelle\entity\Agape.class
 com\mutuelle\entity\MemberStatusLog$MemberStatusLogBuilder.class
 com\mutuelle\repository\RefuelingDistributionRepository.class
 com\mutuelle\controller\AdminPortalController.class
+com\mutuelle\config\WebSocketEventListener.class
 com\mutuelle\service\RefuelingService.class
 com\mutuelle\entity\InterestDistributionDetail.class
 com\mutuelle\entity\Saving.class
@@ -92,9 +97,12 @@ com\mutuelle\repository\SavingRepository.class
 com\mutuelle\exception\UnauthorizedException.class
 com\mutuelle\entity\ChatMessage.class
 com\mutuelle\entity\HelpType.class
+com\mutuelle\config\WebConfig.class
 com\mutuelle\entity\Help.class
 com\mutuelle\repository\PaymentRepository.class
 com\mutuelle\entity\SettingsHistory.class
+com\mutuelle\config\MutableClock.class
+com\mutuelle\config\WebSocketConfig$1.class
 com\mutuelle\entity\TransactionLog$TransactionLogBuilder.class
 com\mutuelle\config\JwtTokenProvider.class
 com\mutuelle\enums\RoleType.class
@@ -111,6 +119,7 @@ com\mutuelle\entity\Administrator.class
 com\mutuelle\entity\Exercise$ExerciseBuilder.class
 com\mutuelle\entity\RefuelingDistribution.class
 com\mutuelle\repository\TransactionLogRepository.class
+com\mutuelle\config\ClockConfig.class
 com\mutuelle\controller\AuthController.class
 com\mutuelle\repository\TontineRepository.class
 com\mutuelle\repository\SolidarityRepository.class

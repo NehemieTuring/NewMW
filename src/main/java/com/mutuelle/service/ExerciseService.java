@@ -38,8 +38,10 @@ public class ExerciseService {
             throw new BusinessException("La date de fin est obligatoire.");
         }
 
-        // Deactivate all current exercises
-        exerciseRepository.deactivateAll();
+        // Check if an active exercise already exists
+        if (exerciseRepository.findByActiveTrue().isPresent()) {
+            throw new BusinessException("Impossible de créer un nouvel exercice : un exercice est déjà en cours. Veuillez le clôturer avant d'en créer un nouveau.");
+        }
 
         // Set defaults for missing financial fields
         if (exercise.getSolidarityAmount() == null) {

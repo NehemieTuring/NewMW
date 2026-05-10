@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 /**
@@ -22,6 +23,7 @@ public class TransactionService {
 
     private final TransactionLogRepository transactionLogRepository;
     private final CashboxRepository cashboxRepository;
+    private final Clock clock;
 
     /**
      * Records a transaction, updates the cashbox balance, and logs it.
@@ -47,7 +49,7 @@ public class TransactionService {
 
         // 3. Create and save transaction log
         TransactionLog log = TransactionLog.builder()
-                .transactionDate(LocalDateTime.now())
+                .transactionDate(LocalDateTime.now(clock))
                 .cashbox(cashbox)
                 .member(member)
                 .amount(amount.abs()) // Absolute value for the amount field, direction is given by type

@@ -46,8 +46,8 @@ public class HelpService {
 
         Help savedHelp = helpRepository.save(help);
 
-        // Automatic Social Fund (Fonds Social) contribution (e.g., 30% of target amount)
-        BigDecimal socialFundPart = targetAmount.multiply(new BigDecimal("0.3")); // 30% standard
+        // Automatic Social Fund (Fonds Social) contribution (100% of target amount)
+        BigDecimal socialFundPart = targetAmount; 
         Cashbox solidarityBox = cashboxRepository.findByName(CashboxName.SOLIDARITY)
                 .orElseThrow(() -> new BusinessException("Caisse de solidarité introuvable"));
 
@@ -56,15 +56,18 @@ public class HelpService {
                     .help(savedHelp)
                     .amount(socialFundPart)
                     .status("COMPLETED")
-                    .description("Contribution Fonds Social")
+                    .description("Financement Intégral Fonds Social")
                     .build();
             contributionRepository.save(socialContr);
             
             savedHelp.setCollectedAmount(socialFundPart);
+            savedHelp.setStatus("COMPLETED"); // Completing immediately as it's 100% funded
             helpRepository.save(savedHelp);
             
             // Record deduction from Solidarity Fund
-            transactionService.recordTransaction(socialFundPart.negate(), "SOLIDARITY_HELP", "Financement Aide: " + type.getName(), solidarityBox, null);
+            transactionService.recordTransaction(socialFundPart.negate(), "SOLIDARITY_HELP", "Financement Aide (100%): " + type.getName(), solidarityBox, null);
+        } else {
+            throw new BusinessException("Le Fonds Social dispose d'un solde insuffisant (" + solidarityBox.getBalance() + " XAF) pour couvrir cette aide de " + targetAmount + " XAF");
         }
 
         return savedHelp;
@@ -137,7 +140,7 @@ public class HelpService {
     }
 
     public List<Help> getActiveHelps() {
-        return helpRepository.findByStatus("ACTIVE");
+        return helpRepository.findByStatusIn(java.util.List.of("ACTIVE", "COMPLETED"));
     }
 
     @Transactional

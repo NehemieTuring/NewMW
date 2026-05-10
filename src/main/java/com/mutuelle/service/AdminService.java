@@ -56,7 +56,6 @@ public class AdminService {
         Member member = Member.builder()
                 .user(savedUser)
                 .administrator(savedAdmin)
-                .registrationNumber("ADM-" + savedAdmin.getId())
                 .username(username)
                 .inscriptionDate(LocalDate.now())
                 .active(true)
@@ -116,6 +115,15 @@ public class AdminService {
         user.setName(name);
         user.setFirstName(firstName);
         admin.setUsername(username);
+        userRepository.save(user);
+        return adminRepository.save(admin);
+    }
+
+    @Transactional
+    public Administrator updateAvatar(Long id, String avatarUrl) {
+        Administrator admin = getAdminById(id);
+        User user = admin.getUser();
+        user.setAvatar(avatarUrl);
         userRepository.save(user);
         return adminRepository.save(admin);
     }

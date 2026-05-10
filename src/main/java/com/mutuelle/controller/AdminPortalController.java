@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -19,7 +20,7 @@ import java.util.Map;
 @RequestMapping("/admin")
 @RequiredArgsConstructor
 @Tag(name = "Secrétaire Générale API", description = "Endpoints for operational management")
-// @PreAuthorize removed from class level to allow debug endpoint access
+@PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN', 'ROLE_SECRETAIRE_GENERALE', 'ROLE_PRESIDENT', 'ROLE_TRESORIER')")
 public class AdminPortalController {
 
     private final MemberService memberService;
@@ -32,6 +33,7 @@ public class AdminPortalController {
     private final RefuelingService refuelingService;
     private final DashboardService dashboardService;
     private final ChatService chatService;
+    private final FileStorageService fileStorageService;
     private final AdminService adminService;
     private final AuthService authService;
     private final AgapeService agapeService;
@@ -43,9 +45,6 @@ public class AdminPortalController {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         Administrator currentAdmin = adminService.getAdminByEmail(email);
         request.setAdminId(currentAdmin.getId());
-        if (request.getRegistrationNumber() == null || request.getRegistrationNumber().isBlank()) {
-            request.setRegistrationNumber("MEM-" + System.currentTimeMillis());
-        }
         return ResponseEntity.ok(memberService.register(request));
     }
 
@@ -163,6 +162,11 @@ public class AdminPortalController {
     @GetMapping("/borrowings/members/{memberId}")
     public ResponseEntity<List<Borrowing>> getMemberLoans(@PathVariable Long memberId) {
         return ResponseEntity.ok(borrowingService.getMemberLoans(memberId));
+    }
+
+    @GetMapping("/borrowings/members/{memberId}/max-amount")
+    public ResponseEntity<BigDecimal> getMemberMaxAmount(@PathVariable Long memberId) {
+        return ResponseEntity.ok(borrowingService.calculateMaxLoan(savingService.getMemberBalance(memberId)));
     }
 
     // Agape
@@ -283,8 +287,19 @@ public class AdminPortalController {
     }
 
     @PostMapping("/sessions")
-    public ResponseEntity<Session> createSession(@RequestBody Session session) {
-        return ResponseEntity.ok(sessionService.createSession(session));
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN', 'ROLE_SECRETAIRE_GENERALE', 'ROLE_PRESIDENT', 'ROLE_TRESORIER')")
+    public ResponseEntity<?> createSession(@RequestBody Session session, Authentication auth) {
+        try {
+            String email = auth.getName();
+            Administrator admin = adminService.getAdminByEmail(email);
+            Session created = sessionService.createSession(session, admin);
+            return ResponseEntity.ok(created);
+        } catch (Exception e) {
+            System.err.println("=== SESSION CREATION FAILED ===");
+            e.printStackTrace();
+            String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            return ResponseEntity.status(500).body(java.util.Map.of("message", "Erreur lors de la création de la session: " + msg));
+        }
     }
 
     @GetMapping("/sessions")
@@ -364,24 +379,69 @@ public class AdminPortalController {
 
     // Chat / Communication
     @PostMapping("/chat/send")
-    public ResponseEntity<ChatMessage> sendMessage(@RequestParam Long receiverId, @RequestParam String content) {
+    public ResponseEntity<ChatMessage> sendMessage(@RequestParam(required = false) Long receiverId, 
+                                                   @RequestParam(required = false) String content,
+                                                   @RequestParam(required = false) String attachmentUrl,
+                                                   @RequestParam(required = false) String attachmentType) {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         Administrator admin = adminService.getAdminByEmail(email);
-        return ResponseEntity.ok(chatService.sendMessage(admin.getUser().getId(), receiverId, content));
+        return ResponseEntity.ok(chatService.sendMessage(admin.getUser().getId(), receiverId, content, attachmentUrl, attachmentType));
+    }
+
+    @GetMapping("/chat/group/messages")
+    public ResponseEntity<org.springframework.data.domain.Page<ChatMessage>> getGroupMessages(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(chatService.getGroupHistory(page, size));
+    }
+
+    @GetMapping("/chat/group/search")
+    public ResponseEntity<List<ChatMessage>> searchGroupMessages(@RequestParam String query) {
+        return ResponseEntity.ok(chatService.searchGroupMessages(query));
+    }
+
+    @PostMapping("/chat/upload")
+    public ResponseEntity<java.util.Map<String, String>> uploadChatFile(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        String fileName = fileStorageService.storeFile(file);
+        java.util.Map<String, String> response = new java.util.HashMap<>();
+        response.put("url", "/api/files/" + fileName);
+        response.put("type", file.getContentType());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/chat/conversations")
     public ResponseEntity<List<User>> getConversations() {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         Administrator admin = adminService.getAdminByEmail(email);
+        chatService.updateLastSeen(admin.getUser().getId());
         return ResponseEntity.ok(chatService.getConversations(admin.getUser().getId()));
     }
 
     @GetMapping("/chat/messages/{userId}")
-    public ResponseEntity<List<ChatMessage>> getMessages(@PathVariable Long userId) {
+    public ResponseEntity<org.springframework.data.domain.Page<ChatMessage>> getMessages(@PathVariable Long userId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         Administrator admin = adminService.getAdminByEmail(email);
-        return ResponseEntity.ok(chatService.getMessages(admin.getUser().getId(), userId));
+        return ResponseEntity.ok(chatService.getChatHistory(admin.getUser().getId(), userId, page, size));
+    }
+
+    @GetMapping("/chat/messages/{userId}/search")
+    public ResponseEntity<List<ChatMessage>> searchMessages(@PathVariable Long userId, @RequestParam String query) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(chatService.searchMessages(admin.getUser().getId(), userId, query));
+    }
+
+    @PutMapping("/chat/messages/{messageId}")
+    public ResponseEntity<ChatMessage> editMessage(@PathVariable Long messageId, @RequestParam String content) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        return ResponseEntity.ok(chatService.editMessage(admin.getUser().getId(), messageId, content));
+    }
+
+    @DeleteMapping("/chat/messages/{messageId}")
+    public ResponseEntity<Void> deleteMessage(@PathVariable Long messageId) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        chatService.deleteMessage(admin.getUser().getId(), messageId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/chat/unread")
@@ -417,6 +477,15 @@ public class AdminPortalController {
         Administrator admin = adminService.getAdminByEmail(email);
         authService.updatePassword(admin.getUser().getId(), newPassword);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/profile/avatar")
+    public ResponseEntity<Administrator> updateAvatar(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Administrator admin = adminService.getAdminByEmail(email);
+        String fileName = fileStorageService.storeFile(file);
+        String avatarUrl = "/api/files/" + fileName;
+        return ResponseEntity.ok(adminService.updateAvatar(admin.getId(), avatarUrl));
     }
 
     @GetMapping("/admins")

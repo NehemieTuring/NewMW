@@ -28,6 +28,7 @@ public class MemberPortalController {
     private final BorrowingService borrowingService;
     private final HelpService helpService;
     private final ChatService chatService;
+    private final FileStorageService fileStorageService;
     private final AuthService authService;
     private final SessionService sessionService;
     private final ExerciseService exerciseService;
@@ -45,7 +46,6 @@ public class MemberPortalController {
             return Member.builder()
                     .id(0L) 
                     .user(user)
-                    .registrationNumber(user.getType().toString())
                     .username(user.getEmail())
                     .inscriptionDate(java.time.LocalDate.now())
                     .active(true)
@@ -81,6 +81,21 @@ public class MemberPortalController {
         Member member = getCurrentMemberOrVirtual();
         authService.updatePassword(member.getUser().getId(), newPassword);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/profile/avatar")
+    public ResponseEntity<Member> updateAvatar(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        Member member = getCurrentMemberOrVirtual();
+        String fileName = fileStorageService.storeFile(file);
+        String avatarUrl = "/api/files/" + fileName;
+        
+        if (member.getId() == 0L) {
+             User user = member.getUser();
+             user.setAvatar(avatarUrl);
+             userRepository.save(user);
+             return ResponseEntity.ok(member);
+        }
+        return ResponseEntity.ok(memberService.updateAvatar(member.getId(), avatarUrl));
     }
 
     // 4. Statut et dettes
@@ -128,6 +143,13 @@ public class MemberPortalController {
         Member member = getCurrentMemberOrVirtual();
         if (member.getId() == 0L) return ResponseEntity.ok(java.util.Collections.emptyList());
         return ResponseEntity.ok(borrowingService.getMemberLoans(member.getId()));
+    }
+
+    @GetMapping("/borrowings/max-amount")
+    public ResponseEntity<BigDecimal> getMyMaxAmount() {
+        Member member = getCurrentMemberOrVirtual();
+        if (member.getId() == 0L) return ResponseEntity.ok(BigDecimal.ZERO);
+        return ResponseEntity.ok(borrowingService.calculateMaxLoan(savingService.getMemberBalance(member.getId())));
     }
 
     @PostMapping("/borrowings/request")
@@ -199,21 +221,64 @@ public class MemberPortalController {
     }
 
     @PostMapping("/chat/send")
-    public ResponseEntity<ChatMessage> sendMessage(@RequestParam Long receiverId, @RequestParam String content) {
+    public ResponseEntity<ChatMessage> sendMessage(@RequestParam(required = false) Long receiverId, 
+                                                   @RequestParam(required = false) String content,
+                                                   @RequestParam(required = false) String attachmentUrl,
+                                                   @RequestParam(required = false) String attachmentType) {
         Member member = getCurrentMemberOrVirtual();
-        return ResponseEntity.ok(chatService.sendMessage(member.getUser().getId(), receiverId, content));
+        return ResponseEntity.ok(chatService.sendMessage(member.getUser().getId(), receiverId, content, attachmentUrl, attachmentType));
+    }
+
+    @GetMapping("/chat/group/messages")
+    public ResponseEntity<org.springframework.data.domain.Page<ChatMessage>> getGroupMessages(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(chatService.getGroupHistory(page, size));
+    }
+
+    @GetMapping("/chat/group/search")
+    public ResponseEntity<List<ChatMessage>> searchGroupMessages(@RequestParam String query) {
+        return ResponseEntity.ok(chatService.searchGroupMessages(query));
+    }
+
+    @PostMapping("/chat/upload")
+    public ResponseEntity<java.util.Map<String, String>> uploadChatFile(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        String fileName = fileStorageService.storeFile(file);
+        java.util.Map<String, String> response = new java.util.HashMap<>();
+        response.put("url", "/api/files/" + fileName);
+        response.put("type", file.getContentType());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/chat/conversations")
     public ResponseEntity<List<User>> getConversations() {
         Member member = getCurrentMemberOrVirtual();
+        chatService.updateLastSeen(member.getUser().getId());
         return ResponseEntity.ok(chatService.getConversations(member.getUser().getId()));
     }
 
     @GetMapping("/chat/messages/{userId}")
-    public ResponseEntity<List<ChatMessage>> getMessages(@PathVariable Long userId) {
+    public ResponseEntity<org.springframework.data.domain.Page<ChatMessage>> getMessages(@PathVariable Long userId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         Member member = getCurrentMemberOrVirtual();
-        return ResponseEntity.ok(chatService.getMessages(member.getUser().getId(), userId));
+        chatService.markConversationAsRead(member.getUser().getId(), userId);
+        return ResponseEntity.ok(chatService.getChatHistory(member.getUser().getId(), userId, page, size));
+    }
+
+    @GetMapping("/chat/messages/{userId}/search")
+    public ResponseEntity<List<ChatMessage>> searchMessages(@PathVariable Long userId, @RequestParam String query) {
+        Member member = getCurrentMemberOrVirtual();
+        return ResponseEntity.ok(chatService.searchMessages(member.getUser().getId(), userId, query));
+    }
+
+    @PutMapping("/chat/messages/{messageId}")
+    public ResponseEntity<ChatMessage> editMessage(@PathVariable Long messageId, @RequestParam String content) {
+        Member member = getCurrentMemberOrVirtual();
+        return ResponseEntity.ok(chatService.editMessage(member.getUser().getId(), messageId, content));
+    }
+
+    @DeleteMapping("/chat/messages/{messageId}")
+    public ResponseEntity<Void> deleteMessage(@PathVariable Long messageId) {
+        Member member = getCurrentMemberOrVirtual();
+        chatService.deleteMessage(member.getUser().getId(), messageId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/chat/unread")
@@ -240,5 +305,14 @@ public class MemberPortalController {
     
     public ResponseEntity<List<Exercise>> getExercises() {
         return ResponseEntity.ok(exerciseService.getAllExercises());
+    }
+    @GetMapping("/debug/roles")
+    public ResponseEntity<Map<String, Object>> getDebugRoles() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        Map<String, Object> debug = new java.util.HashMap<>();
+        debug.put("name", auth.getName());
+        debug.put("authorities", auth.getAuthorities().stream().map(Object::toString).toList());
+        debug.put("isAuthenticated", auth.isAuthenticated());
+        return ResponseEntity.ok(debug);
     }
 }

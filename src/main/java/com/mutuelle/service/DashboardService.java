@@ -25,6 +25,7 @@ public class DashboardService {
     private final TransactionLogRepository transactionLogRepository;
     private final SessionRepository sessionRepository;
     private final SolidarityDebtRepository solidarityDebtRepository;
+    private final MemberService memberService;
 
     public Map<String, Object> getGlobalStats() {
         Map<String, Object> stats = new HashMap<>();
@@ -42,6 +43,11 @@ public class DashboardService {
         // Financial Totals from Cashboxes
         List<Cashbox> cashboxes = cashboxRepository.findAll();
         stats.put("cashboxes", cashboxes);
+        
+        java.math.BigDecimal globalBalance = cashboxes.stream()
+                .map(Cashbox::getBalance)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        stats.put("globalBalance", globalBalance);
 
         stats.put("totalEnrollments", cashboxes.stream()
                 .filter(c -> c.getName() == com.mutuelle.enums.CashboxName.INSCRIPTION)
@@ -60,9 +66,21 @@ public class DashboardService {
 
         // Total Loans (outstanding principal)
         java.math.BigDecimal totalLoans = borrowingRepository.findAll().stream()
-                .map(com.mutuelle.entity.Borrowing::getApprovedAmount) // Total amount approved
+                .map(com.mutuelle.entity.Borrowing::getApprovedAmount)
                 .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
         stats.put("totalLoans", totalLoans);
+
+        // Total Refunds
+        stats.put("totalRefunds", transactionLogRepository.findAll().stream()
+                .filter(tx -> "REFUND".equals(tx.getCategory()) || "LOAN_REFUND".equals(tx.getCategory()))
+                .map(tx -> tx.getAmount())
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add));
+
+        // Total Penalties
+        stats.put("totalPenalties", transactionLogRepository.findAll().stream()
+                .filter(tx -> "PENALTY".equals(tx.getCategory()))
+                .map(tx -> tx.getAmount())
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add));
 
         // Recent Transactions
         stats.put("recentTransactions", transactionLogRepository.findTop10ByOrderByTransactionDateDesc().stream()
@@ -80,17 +98,16 @@ public class DashboardService {
         sessionRepository.findByActiveTrue().ifPresent(s -> {
             Map<String, Object> sMap = new HashMap<>();
             sMap.put("id", s.getId());
-            sMap.put("name", "Session #" + s.getSessionNumber());
+            sMap.put("name", s.getName() != null ? s.getName() : "Session #" + s.getSessionNumber());
             sMap.put("sessionDate", s.getDate());
             sMap.put("exerciseYear", s.getExercise().getYear());
             stats.put("activeSession", sMap);
         });
 
         // Rules state
-        List<Member> enRegle = allMembers.stream().filter(m -> {
-            var debt = solidarityDebtRepository.findByMemberId(m.getId()).orElse(null);
-            return debt != null && "UP_TO_DATE".equals(debt.getStatus());
-        }).collect(Collectors.toList());
+        List<Member> enRegle = allMembers.stream().filter(m -> 
+            "EN_REGLE".equals(memberService.getMemberStatus(m.getId()))
+        ).collect(Collectors.toList());
 
         stats.put("membersInRule", enRegle.size());
         stats.put("membersNotInRule", allMembers.size() - enRegle.size());
@@ -99,17 +116,15 @@ public class DashboardService {
     }
 
     public List<Member> getMembersInRule() {
-        return memberRepository.findAll().stream().filter(m -> {
-            var debt = solidarityDebtRepository.findByMemberId(m.getId()).orElse(null);
-            return debt != null && "UP_TO_DATE".equals(debt.getStatus());
-        }).collect(Collectors.toList());
+        return memberRepository.findAll().stream()
+                .filter(m -> "EN_REGLE".equals(memberService.getMemberStatus(m.getId())))
+                .collect(Collectors.toList());
     }
-
+    
     public List<Member> getMembersNotInRule() {
-        return memberRepository.findAll().stream().filter(m -> {
-            var debt = solidarityDebtRepository.findByMemberId(m.getId()).orElse(null);
-            return debt == null || !"UP_TO_DATE".equals(debt.getStatus());
-        }).collect(Collectors.toList());
+        return memberRepository.findAll().stream()
+                .filter(m -> !"EN_REGLE".equals(memberService.getMemberStatus(m.getId())))
+                .collect(Collectors.toList());
     }
 
     public Map<String, Object> getExerciseBilan(Long exerciseId) {

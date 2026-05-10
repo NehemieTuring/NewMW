@@ -31,6 +31,7 @@ public class MemberService {
     private final TransactionLogRepository transactionLogRepository;
     private final PaymentRepository paymentRepository;
     private final ExerciseService exerciseService;
+    private final RefuelingDistributionRepository refuelingDistributionRepository;
 
     @Transactional
     public Member register(RegisterMemberRequest request) {
@@ -59,7 +60,6 @@ public class MemberService {
         Member member = Member.builder()
                 .user(savedUser)
                 .administrator(administrator)
-                .registrationNumber(request.getRegistrationNumber())
                 .username(request.getUsername())
                 .inscriptionDate(request.getInscriptionDate())
                 .active(true)
@@ -129,7 +129,6 @@ public class MemberService {
                 Member virtualMember = Member.builder()
                         .user(admin.getUser())
                         .administrator(admin)
-                        .registrationNumber("ADM-" + admin.getId())
                         .username(admin.getUsername())
                         .inscriptionDate(java.time.LocalDate.now())
                         .active(true)
@@ -185,9 +184,53 @@ public class MemberService {
 
     public String getMemberStatus(Long id) {
         Member member = getMemberById(id);
-        if (!member.isActive()) return "INACTIF";
-        // Simple logic for illustration:
-        return "EN_REGLE";
+        
+        BigDecimal sDebt = getSolidarityDebtAmount(id);
+        BigDecimal rDebt = getRefuelingDebtAmount(id);
+        BigDecimal bDebt = getBorrowingDebtAmount(id);
+        
+        BigDecimal totalFinancialDebt = sDebt.add(rDebt).add(bDebt);
+        
+        boolean hasPaidSolidarity = sDebt.compareTo(BigDecimal.ZERO) <= 0;
+        boolean hasPaidRefueling = rDebt.compareTo(BigDecimal.ZERO) <= 0;
+        
+        if (hasPaidSolidarity && hasPaidRefueling) {
+            return "EN_REGLE";
+        } else {
+            // Un membre non en règle est soit Insolvable, soit Inactif selon sa dette totale
+            if (totalFinancialDebt.compareTo(new BigDecimal("250000")) < 0) {
+                return "INSOLVABLE";
+            } else {
+                return "INACTIF";
+            }
+        }
+    }
+
+    private BigDecimal getSolidarityDebtAmount(Long memberId) {
+        return solidarityDebtRepository.findByMemberId(memberId)
+                .map(SolidarityDebt::getRemainingDebt)
+                .orElse(BigDecimal.ZERO);
+    }
+
+    private BigDecimal getRefuelingDebtAmount(Long memberId) {
+        // Total dû pour le renflouement
+        BigDecimal totalDue = refuelingDistributionRepository.findByMemberId(memberId).stream()
+                .map(RefuelingDistribution::getAmountReceived) // amountReceived est utilisé ici comme montant à renflouer
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        // Total payé pour le renflouement
+        BigDecimal totalPaid = paymentRepository.findByMemberIdAndPaymentType(memberId, com.mutuelle.enums.PaymentType.REFUELING).stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        return totalDue.subtract(totalPaid).max(BigDecimal.ZERO);
+    }
+
+    private BigDecimal getBorrowingDebtAmount(Long memberId) {
+        return borrowingRepository.findByMemberId(memberId).stream()
+                .filter(b -> b.getStatus() != com.mutuelle.enums.BorrowingStatus.COMPLETED)
+                .map(Borrowing::getRemainingBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public java.util.List<java.util.Map<String, Object>> getMemberDebts(Long id) {
@@ -238,6 +281,15 @@ public class MemberService {
         user.setTel(tel);
         user.setAddress(address);
         member.setUsername(username);
+        userRepository.save(user);
+        return memberRepository.save(member);
+    }
+
+    @Transactional
+    public Member updateAvatar(Long id, String avatarUrl) {
+        Member member = getMemberById(id);
+        User user = member.getUser();
+        user.setAvatar(avatarUrl);
         userRepository.save(user);
         return memberRepository.save(member);
     }
