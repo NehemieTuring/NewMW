@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mutuelle_backend
+    restart: unless-stopped
+    ports:
+      - "8070:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - app_network
+    external_links:
+      - ${DB_HOST:-mysql_server}
+
+  frontend:
+    build:
+      context: ../NewMWF
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8070/api}
+    container_name: mutuelle_frontend
+    restart: unless-stopped
+    ports:
+      - "5170:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - app_network
+    depends_on:
+      - backend
+
+networks:
+  app_network:
+    name: ${DOCKER_NETWORK:-bridge}
+    external: true

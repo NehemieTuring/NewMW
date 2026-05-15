@@ -1,0 +1,8 @@
+.git
+.idea
+target/
+*.log
+*.txt
+*.db
+*.ps1
+*.md
